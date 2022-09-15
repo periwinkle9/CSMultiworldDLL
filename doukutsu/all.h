@@ -1,0 +1,36 @@
+#pragma once
+
+// #include this file if you want to get everything all in one single #include.
+// I personally would recommend not using this and instead only #include-ing
+// the specific parts that you need.
+
+#include "audio.h"
+#include "background.h"
+#include "boss.h"
+#include "camera.h"
+#include "caret.h"
+#include "config.h"
+#include "credits.h"
+#include "dialog.h"
+#include "draw.h"
+#include "fade.h"
+#include "flags.h"
+#include "flash.h"
+#include "inventory.h"
+#include "keybinds.h"
+#include "map.h"
+#include "misc.h"
+#include "npc.h"
+#include "npc_ai.h"
+#include "npc_table.h"
+#include "organya.h"
+#include "pixtone.h"
+#include "player.h"
+#include "profile.h"
+#include "sound.h"
+#include "teleporter.h"
+#include "trig.h"
+#include "tsc.h"
+#include "valueview.h"
+#include "weapons.h"
+#include "window.h"
