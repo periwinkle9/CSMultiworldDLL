@@ -56,6 +56,7 @@ void patchTSCHook()
 // This <MIM hack is completely untested and possibly doesn't even work. :quate:
 // If anybody wants to try it out, let me know how it goes
 void shiftNPCrect(csvanilla::NPCHAR* npc);
+void equipItem(int flag, csvanilla::BOOL b);
 void patchMIM()
 {
 	// Just gonna copy the XML here
@@ -79,6 +80,9 @@ void patchMIM()
 		};
 		patcher::patchBytes(address, patch2, sizeof patch2);
 	}
+
+	// Patch equip flag
+	patcher::replaceFunction(csvanilla::EquipItem, equipItem);
 }
 void applyPatch()
 {
@@ -88,12 +92,31 @@ void applyPatch()
 
 
 // Below is stuff related to the custom commands
+static dword* mimFlag = reinterpret_cast<dword*>(&csvanilla::gFlagNPC[996]);
 void shiftNPCrect(csvanilla::NPCHAR* npc)
 {
 	// Get flag used by the unobtrusive <MIM hack
-	const dword* mimFlag = reinterpret_cast<dword*>(&csvanilla::gFlagNPC[996]);
 	npc->rect.top += *mimFlag * 32;
 	npc->rect.bottom += *mimFlag * 32;
+}
+void equipItem(int flag, csvanilla::BOOL b)
+{
+	// Allows <EQ[+/-]0064 to still equip/unequip the Mimiga Mask if not using <MIM
+	using csvanilla::gMC;
+	if (b)
+	{
+		gMC.equip |= flag;
+		// Make <EQ+0064 set <MIM0001 if MIM is currently 0 (leave it alone otherwise)
+		if (flag & 0x40 && *mimFlag == 0)
+			*mimFlag = 1;
+	}
+	else
+	{
+		gMC.equip &= ~flag;
+		// If <EQ-0064, set <MIM0000 if MIM was 1
+		if (flag & 0x40 && *mimFlag == 1)
+			*mimFlag = 0;
+	}
 }
 void maxAllWeapons()
 {
@@ -116,7 +139,6 @@ bool checkCustomCommands()
 	};
 	if (isCommand("MIM"))
 	{
-		dword* mimFlag = reinterpret_cast<dword*>(&gFlagNPC[996]);
 		*mimFlag = GetTextScriptNo(gTS.p_read + 4);
 		gTS.p_read += 8;
 	}
