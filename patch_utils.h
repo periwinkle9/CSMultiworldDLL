@@ -1,6 +1,6 @@
 #pragma once
 
-#ifndef _M_IX86
+#if !(defined _M_IX86 || defined __i386__)
 #error Please compile for x86!
 #endif
 

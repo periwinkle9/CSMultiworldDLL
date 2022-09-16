@@ -1,7 +1,7 @@
 EXPORTS
-Real_GetFileVersionInfoSizeA = GetFileVersionInfoSizeA
-Real_GetFileVersionInfoA = GetFileVersionInfoA
-Real_VerQueryValueA = VerQueryValueA
-Real_GetFileVersionInfoSizeW = GetFileVersionInfoSizeW
-Real_GetFileVersionInfoW = GetFileVersionInfoW
-Real_VerQueryValueW = VerQueryValueW
+GetFileVersionInfoSizeA = Real_GetFileVersionInfoSizeA@8
+GetFileVersionInfoA = Real_GetFileVersionInfoA@16
+VerQueryValueA = Real_VerQueryValueA@16
+GetFileVersionInfoSizeW = Real_GetFileVersionInfoSizeW@8
+GetFileVersionInfoW = Real_GetFileVersionInfoW@16
+VerQueryValueW = Real_VerQueryValueW@16
