@@ -69,5 +69,6 @@ static RECT& mapname_rect = *reinterpret_cast<RECT*>(0x493650); // Not original 
 static auto& gMapping = *reinterpret_cast<signed char(*)[0x80]>(0x49E5B8);
 
 static auto& gTMT = *reinterpret_cast<TRANSMAPTABLE(*)[95]>(0x4937B0);
+static int& gStageNo = *reinterpret_cast<int*>(0x4A57F0);
 
 }

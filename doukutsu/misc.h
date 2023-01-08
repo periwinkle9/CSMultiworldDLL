@@ -35,4 +35,7 @@ const auto LoadGenericData = reinterpret_cast<BOOL(*)(void)>(0x411390);
 const auto PutFramePerSecound = reinterpret_cast<void(*)(void)>(0x412370);
 const auto CountFramePerSecound = reinterpret_cast<unsigned long(*)(void)>(0x4123A0);
 
+static int& g_GameFlags = *reinterpret_cast<int*>(0x49E1E8);
+static int& gCounter = *reinterpret_cast<int*>(0x49E1EC);
+
 }
