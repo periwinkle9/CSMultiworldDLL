@@ -17,14 +17,13 @@ void patchBytes(dword address, const byte bytes[], unsigned size)
 void writeNOPs(dword address, unsigned numBytes)
 {
 	// Not sure if 'new' calls a CRT function that I'm not supposed to call
-	// from within DllMain, but let's just hope this is fine
-	// (Note to self: If this doesn't work then do this instead:
-	//byte* bytes = static_cast<byte*>(HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, numBytes));
-	byte* bytes = new byte[numBytes];
+	// from within DllMain, but let's just play it safe and not use it
+	byte* bytes = static_cast<byte*>(HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, numBytes));
+	//byte* bytes = new byte[numBytes];
 	FillMemory(bytes, numBytes, 0x90); // Fill with NOP
 	patchBytes(address, bytes, numBytes);
-	//HeapFree(GetProcessHeap(), 0, bytes);
-	delete[] bytes;
+	HeapFree(GetProcessHeap(), 0, bytes);
+	//delete[] bytes;
 }
 
 
