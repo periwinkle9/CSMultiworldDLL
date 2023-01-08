@@ -163,9 +163,7 @@
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="patches.cpp" />
-    <ClCompile Include="patches\sample_patches\patch_60fps.cpp" />
     <ClCompile Include="patches\hires_timer.cpp" />
-    <ClCompile Include="patches\sample_patches\custom_tsc.cpp" />
     <ClCompile Include="patch_utils.cpp" />
     <ClCompile Include="versiondll_proxy.cpp" />
   </ItemGroup>
@@ -202,8 +200,6 @@
     <ClInclude Include="doukutsu\teleporter.h" />
     <ClInclude Include="doukutsu\window.h" />
     <ClInclude Include="doukutsu\types.h" />
-    <ClInclude Include="patches\sample_patches\patch_60fps.h" />
-    <ClInclude Include="patches\sample_patches\custom_tsc.h" />
     <ClInclude Include="patches\hires_timer.h" />
     <ClInclude Include="patch_utils.h" />
   </ItemGroup>

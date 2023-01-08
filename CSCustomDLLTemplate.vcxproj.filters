@@ -30,12 +30,6 @@
     <ClCompile Include="patches\hires_timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="patches\sample_patches\patch_60fps.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="patches\sample_patches\custom_tsc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="patch_utils.h">
@@ -138,12 +132,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="patches\hires_timer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="patches\sample_patches\patch_60fps.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="patches\sample_patches\custom_tsc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
