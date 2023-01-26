@@ -3,6 +3,7 @@
 #include "doukutsu/credits.h"
 
 void applyPostInitPatches();
+void cleanup();
 
 namespace patcher
 {
@@ -44,6 +45,20 @@ void setupPostInitHook()
 	//    one can potentially do stuff that depends on things having sane values
 	//    (not sure what).
 	writeCall(0x40F68B, postInitHook);
+}
+
+static void cleanupHook()
+{
+	// This function is called in place of ReleaseCreditScript(), so we replace the original call here
+	csvanilla::ReleaseCreditScript();
+	// Then call user-defined code
+	cleanup();
+}
+void setupCleanupHook()
+{
+	// Replace the call to ReleaseCreditScript() in Game() with our cleanupHook() function
+	// (This is pretty much right before the game exits)
+	writeCall(0x40F6F9, cleanupHook);
 }
 
 }

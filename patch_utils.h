@@ -48,4 +48,8 @@ void writeNOPs(dword address, unsigned numBytes);
 // initialization or otherwise something that's unsafe to do within DllMain()
 void setupPostInitHook();
 
+// Call this inside applyPatches() in patches.cpp if you have any cleanup routines that should
+// be ran when exiting the game (e.g., deallocating memory), but that is unsafe to do during DLL unloading
+void setupCleanupHook();
+
 }

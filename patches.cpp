@@ -4,7 +4,7 @@
 void applyPatches()
 {
 	//patcher::setupPostInitHook();
-
+	//patcher::setupCleanupHook();
 
 }
 
@@ -12,6 +12,14 @@ void applyPatches()
  * right before entering the main game loop.
  */
 void applyPostInitPatches()
+{
+
+}
+
+/* If patcher::setupCleanupHook() is called above, then this function will be called
+*  upon exiting the game (with Esc+Esc).
+*/
+void cleanup()
 {
 
 }
