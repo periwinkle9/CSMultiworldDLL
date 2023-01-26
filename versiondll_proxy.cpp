@@ -1,6 +1,5 @@
-#define WIN32_LEAN_AND_MEAN
-#include <ShlObj.h>
-#include <string>
+#include "windows_h_wrapper.h"
+#include <shlwapi.h>
 
 static HMODULE getRealVersionDLL()
 {
@@ -9,21 +8,18 @@ static HMODULE getRealVersionDLL()
     if (realVersionDLL == NULL)
     {
         // Get path to system32
-        PWSTR system32;
-        if (SHGetKnownFolderPath(FOLDERID_SystemX86, 0, NULL, &system32) == S_OK)
+        wchar_t system32[MAX_PATH];
+        
+        if (GetSystemDirectoryW(system32, MAX_PATH) && PathAppendW(system32, L"version.dll"))
         {
-            std::wstring versionDLLPath{system32};
-            versionDLLPath += L"\\version.dll";
-
-            realVersionDLL = LoadLibraryW(versionDLLPath.c_str());
+            realVersionDLL = LoadLibraryW(system32);
             if (realVersionDLL)
-                OutputDebugStringW((L"CS DLL Mod: Loaded version.dll from " + versionDLLPath).c_str());
+                OutputDebugStringW(L"CS DLL Mod: Loaded system version.dll");
             else
-                OutputDebugStringW((L"CS DLL Mod: Failed to load version.dll! Path: " + versionDLLPath).c_str());
+                OutputDebugStringW(L"CS DLL Mod: Failed to load system version.dll!");
         }
         else
             OutputDebugStringW(L"CS DLL Mod: Failed to get system directory");
-        CoTaskMemFree(system32);
     }
 
     return realVersionDLL;
