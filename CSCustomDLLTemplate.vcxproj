@@ -73,12 +73,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <TargetName>version</TargetName>
+    <TargetName>dinput</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <TargetName>version</TargetName>
+    <TargetName>dinput</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -161,11 +161,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dinputdll_proxy.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="patches.cpp" />
     <ClCompile Include="patches\hires_timer.cpp" />
     <ClCompile Include="patch_utils.cpp" />
-    <ClCompile Include="versiondll_proxy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="doukutsu\all.h" />

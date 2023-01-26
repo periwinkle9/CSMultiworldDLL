@@ -1,7 +1,8 @@
 EXPORTS
-GetFileVersionInfoSizeA = Real_GetFileVersionInfoSizeA@8
-GetFileVersionInfoA = Real_GetFileVersionInfoA@16
-VerQueryValueA = Real_VerQueryValueA@16
-GetFileVersionInfoSizeW = Real_GetFileVersionInfoSizeW@8
-GetFileVersionInfoW = Real_GetFileVersionInfoW@16
-VerQueryValueW = Real_VerQueryValueW@16
+DirectInputCreateA=Real_DirectInputCreateA@16
+DirectInputCreateW=Real_DirectInputCreateW@16
+DirectInputCreateEx=Real_DirectInputCreateEx@20
+DllCanUnloadNow=Real_DllCanUnloadNow@0 PRIVATE
+DllGetClassObject=Real_DllGetClassObject@12 PRIVATE
+DllRegisterServer=Real_DllRegisterServer@0 PRIVATE
+DllUnregisterServer=Real_DllUnregisterServer@0 PRIVATE

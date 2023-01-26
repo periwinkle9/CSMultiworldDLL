@@ -11,9 +11,9 @@ DEF := exports_mingw.def
 
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
 CXXFLAGS := -std=c++11 -Wall -pedantic-errors -m32 -iquote "$(CURDIR)"
-LDFLAGS := -luuid -lole32 -lwinmm -static -shared -Wl,--subsystem,windows
+LDFLAGS := -luuid -lole32 -lwinmm -lshlwapi -static -shared -Wl,--subsystem,windows
 
-BIN := $(BINDIR)/version.dll
+BIN := $(BINDIR)/dinput.dll
 OBJ := $(patsubst %.cpp,$(OBJDIR)/%.o,$(SRC))
 DEP := $(patsubst %.cpp,$(DEPDIR)/%.d,$(SRC))
 
