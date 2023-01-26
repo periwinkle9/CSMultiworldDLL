@@ -4,7 +4,8 @@
 // in case somebody wants to try running this on an ancient PC. :P
 
 // No WIN32_LEAN_AND_MEAN here, that disables the declaration of timeGetTime()
-#include <Windows.h>
+#define ALL_WIN_H
+#include "windows_h_wrapper.h"
 #include "patch_utils.h"
 
 namespace hires_timer

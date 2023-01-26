@@ -1,6 +1,6 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 // (You shouldn't need to modify anything in this file.)
-#include <Windows.h>
+#include "windows_h_wrapper.h"
 
 void applyPatches();
 
