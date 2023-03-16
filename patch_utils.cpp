@@ -16,14 +16,18 @@ void patchBytes(dword address, const byte bytes[], unsigned size)
 
 void writeNOPs(dword address, unsigned numBytes)
 {
-	// Not sure if 'new' calls a CRT function that I'm not supposed to call
-	// from within DllMain, but let's just play it safe and not use it
-	byte* bytes = static_cast<byte*>(HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, numBytes));
-	//byte* bytes = new byte[numBytes];
-	FillMemory(bytes, numBytes, 0x90); // Fill with NOP
-	patchBytes(address, bytes, numBytes);
-	HeapFree(GetProcessHeap(), 0, bytes);
-	//delete[] bytes;
+	// I could do this more simply with VirtualProtect + FillMemory, but let's not bother with that
+	const byte NOPs[] = {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90};
+	
+	for (unsigned size = sizeof NOPs; size > 0; size /= 2)
+	{
+		while (numBytes >= size)
+		{
+			patchBytes(address, NOPs, size);
+			numBytes -= size;
+			address += size;
+		}
+	}
 }
 
 
