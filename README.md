@@ -10,8 +10,9 @@ no additional files or dependencies. Thus, this project eschews the "plug and pl
 approach of Clownacy's mod loader in favor of a much lighter, simpler design
 which still aims to be fairly modular at the code level.
 
-As far as I am aware, these two mod loader projects *should* be compatible with
-each other, but I have not tested this myself to confirm.
+That said, if you plan to use both this and Clownacy's mod loader together,
+this project also supports exporting a DLL that can be imported by
+Clownacy's mod loader. As a bonus, it will still function as a standalone DLL!
 
 ## Build Instructions
 
@@ -41,6 +42,11 @@ recommended as it will make it easier to share your hacks with others.)
 Functions for modifying the game can be found in `patch_utils.h`, and vanilla
 functions and variables can be accessed by `#include`-ing the relevant header(s)
 in the `doukutsu` folder.
+
+Finally, if you want to integrate this with Clownacy's mod loader, uncomment the
+`#define MODLOADER_DLL` line at the top of `modloader.cpp`. You'll probably also
+want to rename the output DLL file from `dinput.dll` to something more descriptive
+of your mod.
 
 All of the other files in the top-level directory generally don't need to be touched,
 unless you know what you're doing.

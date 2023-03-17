@@ -163,6 +163,7 @@
   <ItemGroup>
     <ClCompile Include="dinputdll_proxy.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="modloader.cpp" />
     <ClCompile Include="patches.cpp" />
     <ClCompile Include="patches\hires_timer.cpp" />
     <ClCompile Include="patch_utils.cpp" />
