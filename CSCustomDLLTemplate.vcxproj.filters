@@ -140,6 +140,9 @@
     <ClInclude Include="windows_h_wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="doukutsu\cstdlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports_msvc.def">

@@ -63,7 +63,7 @@ const auto ActStar = reinterpret_cast<void(*)(void)>(0x421040);
 const auto PutStar = reinterpret_cast<void(*)(int, int)>(0x4213B0);
 
 // Global variables
-static auto gCaretTable = *reinterpret_cast<CARETTABLE(*)[18]>(0x48F830);
+static auto& gCaretTable = *reinterpret_cast<CARETTABLE(*)[18]>(0x48F830);
 static auto& gpCaretFuncTbl = *reinterpret_cast<CARETFUNCTION(*)[18]>(0x48F8C0);
 
 static auto& star = *reinterpret_cast<CARET(*)[3]>(0x4A5800);

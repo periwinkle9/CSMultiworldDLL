@@ -11,6 +11,7 @@
 #include "caret.h"
 #include "config.h"
 #include "credits.h"
+#include "cstdlib.h"
 #include "dialog.h"
 #include "draw.h"
 #include "fade.h"

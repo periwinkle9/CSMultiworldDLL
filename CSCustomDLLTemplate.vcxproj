@@ -173,6 +173,7 @@
     <ClInclude Include="doukutsu\audio.h" />
     <ClInclude Include="doukutsu\background.h" />
     <ClInclude Include="doukutsu\boss.h" />
+    <ClInclude Include="doukutsu\cstdlib.h" />
     <ClInclude Include="doukutsu\npc.h" />
     <ClInclude Include="doukutsu\npc_ai.h" />
     <ClInclude Include="doukutsu\npc_table.h" />
