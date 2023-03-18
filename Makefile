@@ -5,8 +5,8 @@ OBJDIR := obj
 # Too lazy adding another directory to .gitignore, lol
 DEPDIR := $(OBJDIR)
 
-SRC := $(wildcard *.cpp patches/*.cpp patches/*/*.cpp)
-HEADERS := $(wildcard *.h patches/*.h patches/*/*.h doukutsu/*.h)
+SRC := $(wildcard *.cpp patches/*.cpp patches/*/*.cpp patches/*/*/*.cpp)
+HEADERS := $(wildcard *.h patches/*.h patches/*/*.h patches/*/*/*.h doukutsu/*.h)
 DEF := exports_mingw.def
 
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
