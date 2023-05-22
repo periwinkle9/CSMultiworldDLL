@@ -35,7 +35,7 @@ void replaceFunction(Func1 ogFunc, Func2* newFunc)
 	byte bytes[] = {0x68, 0, 0, 0, 0, // PUSH 0x00000000
 					0xC3};            // RET
 	*reinterpret_cast<dword*>(&bytes[1]) = reinterpret_cast<dword>(newFunc); // Replace 0x00000000 with the actual address
-	patchBytes(reinterpret_cast<dword>(ogFunc), bytes, sizeof bytes);
+	patchBytes((dword)(ogFunc), bytes, sizeof bytes);
 }
 
 // Writes 'numBytes' of NOP instructions starting at 'address'.

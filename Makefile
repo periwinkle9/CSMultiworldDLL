@@ -38,7 +38,7 @@ $(OBJDIR)/%.o: %.cpp $(DEPDIR)/%.d | $$(@D)
 	$(CXX) $(CXXFLAGS) $(DEPFLAGS) $(OFLAGS) -c $< -o $@
 
 $(BIN): $(OBJ) $(DEF) | $(BINDIR)
-	$(CXX) $(CXXFLAGS) $(OFLAGS) $^ $(DEF) $(LDFLAGS) -o $(BIN)
+	$(CXX) $(CXXFLAGS) $(OFLAGS) $^ $(LDFLAGS) -o $(BIN)
 
 $(BINDIR) $(OBJ_SUBDIRS):
 	@mkdir -p $@
