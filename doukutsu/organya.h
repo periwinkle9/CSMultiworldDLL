@@ -35,7 +35,7 @@ struct NOTELIST
 struct TRACKDATA
 {
 	unsigned short freq;
-	unsigned short wave_no;
+	unsigned char wave_no;
 	signed char pipi;
 	NOTELIST* note_p;
 	NOTELIST* note_list;
@@ -50,7 +50,7 @@ struct MUSICINFO
 	long end_x;
 	TRACKDATA tdata[16];
 };
-typedef struct OrgData
+struct ORGDATA
 {
 	MUSICINFO info;
 	char track;
@@ -58,7 +58,7 @@ typedef struct OrgData
 	unsigned char def_pan;
 	unsigned char def_volume;
 	
-	OrgData();
+	ORGDATA();
 	void InitOrgData();
 	void GetMusicInfo(MUSICINFO* mi);
 	BOOL SetMusicInfo(MUSICINFO* mi, unsigned long flag);
@@ -67,7 +67,7 @@ typedef struct OrgData
 	void PlayData(void);
 	void SetPlayPointer(long x);
 	BOOL InitMusicData(const char* path);
-} ORGDATA;
+};
 struct OCTWAVE
 {
 	short wave_size;
@@ -88,50 +88,55 @@ const auto ChangeDramFrequency = reinterpret_cast<void(*)(unsigned char, signed 
 const auto ChangeDramPan = reinterpret_cast<void(*)(unsigned char, signed char)>(0x41B480);
 const auto ChangeDramVolume = reinterpret_cast<void(*)(long, signed char)>(0x41B4D0);
 const auto PlayDramObject = reinterpret_cast<void(*)(unsigned char, int, signed char)>(0x41B510);
-inline OrgData::OrgData() : info{}, track{}, mute{}, def_pan{}, def_volume{} // Initialize to shut up compiler warnings
+// Pointers to ORGDATA member functions
+namespace OrgData
 {
-	const auto ctor = reinterpret_cast<OrgData * (__thiscall*)(OrgData*)>(0x41B600);
-	ctor(this);
+const auto ctor = reinterpret_cast<ORGDATA * (__thiscall*)(ORGDATA*)>(0x41B600);
+const auto InitOrgData = reinterpret_cast<void(__thiscall*)(ORGDATA*)>(0x41B650);
+const auto SetMusicInfo = reinterpret_cast<BOOL(__thiscall*)(ORGDATA*, MUSICINFO*, unsigned long)>(0x41B730);
+const auto NoteAlloc = reinterpret_cast<BOOL(__thiscall*)(ORGDATA*, unsigned short)>(0x41B890);
+const auto ReleaseNote = reinterpret_cast<void(__thiscall*)(ORGDATA*)>(0x41BA70);
+const auto InitMusicData = reinterpret_cast<BOOL(__thiscall*)(ORGDATA*, const char*)>(0x41BAD0);
+const auto PlayData = reinterpret_cast<void(__thiscall*)(ORGDATA*)>(0x41C2B0);
+const auto SetPlayPointer = reinterpret_cast<void(__thiscall*)(ORGDATA*, long)>(0x41C630);
+const auto GetMusicInfo = reinterpret_cast<void(__thiscall*)(ORGDATA*, MUSICINFO*)>(0x41C0B0);
 }
-inline void OrgData::InitOrgData()
+// Wrappers for the above in case you need to call them from within your own code
+inline ORGDATA::ORGDATA() : info{}, track{}, mute{}, def_pan{}, def_volume{} // Initialize to shut up compiler warnings
 {
-	const auto func = reinterpret_cast<void(__thiscall*)(OrgData*)>(0x41B650);
-	return func(this);
+	OrgData::ctor(this);
 }
-inline BOOL OrgData::SetMusicInfo(MUSICINFO* mi, unsigned long flag)
+inline void ORGDATA::InitOrgData()
 {
-	const auto func = reinterpret_cast<BOOL(__thiscall*)(OrgData*, MUSICINFO*, unsigned long)>(0x41B730);
-	return func(this, mi, flag);
+	return OrgData::InitOrgData(this);
 }
-inline BOOL OrgData::NoteAlloc(unsigned short note_num)
+inline BOOL ORGDATA::SetMusicInfo(MUSICINFO* mi, unsigned long flag)
 {
-	const auto func = reinterpret_cast<BOOL(__thiscall*)(OrgData*, unsigned short)>(0x41B890);
-	return func(this, note_num);
+	return OrgData::SetMusicInfo(this, mi, flag);
 }
-inline void OrgData::ReleaseNote(void)
+inline BOOL ORGDATA::NoteAlloc(unsigned short note_num)
 {
-	const auto func = reinterpret_cast<void(__thiscall*)(OrgData*)>(0x41BA70);
-	return func(this);
+	return OrgData::NoteAlloc(this, note_num);
 }
-inline BOOL OrgData::InitMusicData(const char* path)
+inline void ORGDATA::ReleaseNote(void)
 {
-	const auto func = reinterpret_cast<BOOL(__thiscall*)(OrgData*, const char*)>(0x41BAD0);
-	return func(this, path);
+	return OrgData::ReleaseNote(this);
 }
-inline void OrgData::GetMusicInfo(MUSICINFO* mi)
+inline BOOL ORGDATA::InitMusicData(const char* path)
 {
-	const auto func = reinterpret_cast<void(__thiscall*)(OrgData*, MUSICINFO*)>(0x41C0B0);
-	func(this, mi);
+	return OrgData::InitMusicData(this, path);
 }
-inline void OrgData::PlayData(void)
+inline void ORGDATA::GetMusicInfo(MUSICINFO* mi)
 {
-	const auto func = reinterpret_cast<void(__thiscall*)(OrgData*)>(0x41C2B0);
-	return func(this);
+	return OrgData::GetMusicInfo(this, mi);
 }
-inline void OrgData::SetPlayPointer(long x)
+inline void ORGDATA::PlayData(void)
 {
-	const auto func = reinterpret_cast<void(__thiscall*)(OrgData*, long)>(0x41C630);
-	return func(this, x);
+	return OrgData::PlayData(this);
+}
+inline void ORGDATA::SetPlayPointer(long x)
+{
+	return OrgData::SetPlayPointer(this, x);
 }
 const auto InitMMTimer = reinterpret_cast<BOOL(*)(void)>(0x41C180);
 const auto StartTimer = reinterpret_cast<BOOL(*)(DWORD)>(0x41C1E0);
