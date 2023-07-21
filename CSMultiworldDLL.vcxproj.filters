@@ -30,14 +30,11 @@
     <ClCompile Include="patch_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="patches\hires_timer.cpp">
+    <ClCompile Include="patches\console.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="exports_mingw.def">
-      <Filter>Source Files</Filter>
-    </None>
     <None Include="exports_msvc.def">
       <Filter>Source Files</Filter>
     </None>
@@ -148,7 +145,7 @@
     <ClInclude Include="doukutsu\window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="patches\hires_timer.h">
+    <ClInclude Include="patches\console.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

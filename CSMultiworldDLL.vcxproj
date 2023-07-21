@@ -22,6 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{990106D8-37BA-4371-97D7-90200E87B1B8}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -64,9 +65,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>dinput</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>dinput</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -80,6 +83,8 @@
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>exports_msvc.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -95,6 +100,8 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>exports_msvc.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -102,11 +109,10 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="modloader.cpp" />
     <ClCompile Include="patches.cpp" />
-    <ClCompile Include="patches\hires_timer.cpp" />
+    <ClCompile Include="patches\console.cpp" />
     <ClCompile Include="patch_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="exports_mingw.def" />
     <None Include="exports_msvc.def" />
   </ItemGroup>
   <ItemGroup>
@@ -143,7 +149,7 @@
     <ClInclude Include="doukutsu\valueview.h" />
     <ClInclude Include="doukutsu\weapons.h" />
     <ClInclude Include="doukutsu\window.h" />
-    <ClInclude Include="patches\hires_timer.h" />
+    <ClInclude Include="patches\console.h" />
     <ClInclude Include="patch_utils.h" />
     <ClInclude Include="windows_h_wrapper.h" />
   </ItemGroup>
