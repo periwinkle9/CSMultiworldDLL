@@ -1,10 +1,11 @@
 #include "patch_utils.h"
+#include "patches/console.h"
 
 // Initialization function called when the DLL is first loaded
 void applyPatches()
 {
-	//patcher::setupPostInitHook();
-	//patcher::setupCleanupHook();
+	patcher::setupPostInitHook();
+	patcher::setupCleanupHook();
 
 }
 
@@ -13,7 +14,7 @@ void applyPatches()
  */
 void applyPostInitPatches()
 {
-
+	initConsole();
 }
 
 /* If patcher::setupCleanupHook() is called above, then this function will be called
@@ -21,5 +22,5 @@ void applyPostInitPatches()
 */
 void cleanup()
 {
-
+	exitConsole();
 }
