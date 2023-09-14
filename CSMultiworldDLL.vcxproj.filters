@@ -33,6 +33,18 @@
     <ClCompile Include="patches\console.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="patches\tsc\TSCExecutor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="patches\tsc\commands.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="patches\RequestQueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="patches\game_hooks.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports_msvc.def">
@@ -41,9 +53,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="patch_utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="windows_h_wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="doukutsu\all.h">
@@ -146,6 +155,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="patches\console.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="patches\tsc\TSCExecutor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="patches\RequestQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="patches\game_hooks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

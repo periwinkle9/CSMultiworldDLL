@@ -5,8 +5,11 @@
 #include <mutex>
 #include <functional>
 #include <condition_variable>
+#include <utility>
 #include <stdio.h>
-#include "../windows_h_wrapper.h"
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include "RequestQueue.h"
 
 class ConsoleManager
 {
@@ -50,9 +53,31 @@ void ConsoleManager::handleInputs()
 		isEnterPressed = false;
 
 		std::cout << "Enter command: ";
-		std::string line;
-		std::getline(std::cin >> std::ws, line);
-		std::cout << "You entered: " << line << std::endl;
+		std::string command;
+		while (true)
+		{
+			std::string line;
+			std::getline(std::cin >> std::ws, line);
+			command += line;
+			if (!line.empty() && line.back() == '\\')
+			{
+				command.pop_back();
+				command += "\r\n";
+				std::cout << "> ";
+			}
+			else
+				break;
+		}
+		if (requestQueue != nullptr)
+		{
+			Request request;
+			request.type = Request::RequestType::SCRIPT;
+			request.script = std::move(command);
+			requestQueue->push(std::move(request));
+			std::cout << "Command sent." << std::endl;
+		}
+		else
+			std::cout << "Command receiver not initialized" << std::endl;
 	}
 }
 
@@ -75,6 +100,8 @@ ConsoleManager::ConsoleManager() : inputThread{}, mutex{}, cv{}, keyboardHook{nu
 
 		// Install keyboard hook
 		keyboardHook = SetWindowsHookExA(WH_KEYBOARD, keyboardHookProc, nullptr, GetCurrentThreadId());
+		if (keyboardHook == nullptr)
+			std::cerr << "Failed to set keyboard hook! You will be unable to send commands from this console." << std::endl;
 
 		inputThread = std::thread(std::bind(&ConsoleManager::handleInputs, this));
 	}

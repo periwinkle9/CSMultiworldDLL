@@ -66,10 +66,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>dinput</TargetName>
+    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>dinput</TargetName>
+    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -78,6 +80,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -93,6 +96,7 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -110,7 +114,11 @@
     <ClCompile Include="modloader.cpp" />
     <ClCompile Include="patches.cpp" />
     <ClCompile Include="patches\console.cpp" />
+    <ClCompile Include="patches\game_hooks.cpp" />
+    <ClCompile Include="patches\tsc\commands.cpp" />
     <ClCompile Include="patch_utils.cpp" />
+    <ClCompile Include="patches\tsc\TSCExecutor.cpp" />
+    <ClCompile Include="patches\RequestQueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports_msvc.def" />
@@ -150,8 +158,10 @@
     <ClInclude Include="doukutsu\weapons.h" />
     <ClInclude Include="doukutsu\window.h" />
     <ClInclude Include="patches\console.h" />
+    <ClInclude Include="patches\game_hooks.h" />
     <ClInclude Include="patch_utils.h" />
-    <ClInclude Include="windows_h_wrapper.h" />
+    <ClInclude Include="patches\tsc\TSCExecutor.h" />
+    <ClInclude Include="patches\RequestQueue.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

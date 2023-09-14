@@ -1,12 +1,15 @@
 #include "patch_utils.h"
 #include "patches/console.h"
+#include "patches/tsc/TSCExecutor.h"
+#include "patches/RequestQueue.h"
+#include "patches/game_hooks.h"
 
 // Initialization function called when the DLL is first loaded
 void applyPatches()
 {
 	patcher::setupPostInitHook();
 	patcher::setupCleanupHook();
-
+	applyTSCHooks();
 }
 
 /* If patcher::setupPostInitHook() is called above, then this function will be called
@@ -15,6 +18,8 @@ void applyPatches()
 void applyPostInitPatches()
 {
 	initConsole();
+	initTSC2();
+	initRequestQueue();
 }
 
 /* If patcher::setupCleanupHook() is called above, then this function will be called
@@ -23,4 +28,6 @@ void applyPostInitPatches()
 void cleanup()
 {
 	exitConsole();
+	endTSC2();
+	endRequestQueue();
 }
