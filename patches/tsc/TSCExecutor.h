@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include <array>
 
 class TSCExecutor
 {
@@ -13,7 +14,8 @@ class TSCExecutor
 	int wait;
 	int item; // <GIT graphic
 	int NUMnum; // Number storage for <NUM command
-	std::string text; // Message box text
+	std::array<std::string, 3> textLines; // Message box text
+	unsigned int currentLine;
 	bool activeTextbox;
 	bool updateText;
 

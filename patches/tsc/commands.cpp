@@ -60,9 +60,11 @@ auto TSCExecutor::processCommand() -> CommandStatus
 		++currentPos;
 		if (currentPos != currentScript.cend() && *currentPos == '\n')
 			++currentPos;
-		if (activeTextbox && !text.empty()) // Avoid leading newlines
+		if (activeTextbox)
 		{
-			text += "\r\n"; // Let's hope this actually works
+			// Avoid leading newlines
+			if (!(currentLine == 0 && textLines.front().empty()))
+				currentLine += 1;
 			updateText = true;
 		}
 		return CommandStatus::PROCESSNEXT;
@@ -522,7 +524,8 @@ auto TSCExecutor::processCommand() -> CommandStatus
 	case TSCcmd<'N','U','M'>::value:
 		if (!hasArgs(1))
 			return CommandStatus::ISTEXT;
-		text += std::to_string(NUMnum);
+		if (currentLine < textLines.size())
+			textLines[currentLine] += std::to_string(NUMnum);
 		updateText = true;
 		currentPos += 8;
 		break;

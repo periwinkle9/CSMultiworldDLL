@@ -24,7 +24,7 @@ void endTSC2()
 }
 
 TSCExecutor::TSCExecutor() : scriptBuffer{}, currentScript{}, currentPos{}, mode{OperationMode::IDLE},
-	wait{0}, item{0}, NUMnum{0}, text{}, activeTextbox{false}, updateText{false}
+	wait{0}, item{0}, NUMnum{0}, textLines{}, currentLine{0}, activeTextbox{false}, updateText{false}
 {
 	// Create text surface using unused surface ID
 	// (This way we won't have to clean it up ourselves)
@@ -37,7 +37,9 @@ void TSCExecutor::resetState()
 	wait = 0;
 	item = 0;
 	NUMnum = 0;
-	text.clear();
+	for (std::string& line: textLines)
+		line.clear();
+	currentLine = 0;
 	activeTextbox = false;
 	updateText = false;
 }
@@ -112,19 +114,22 @@ void TSCExecutor::processText()
 		return;
 	std::size_t size = 1;
 	auto textEndPos = std::next(currentPos);
-	// Stop when reaching a command
-	while (textEndPos != currentScript.end() && *textEndPos != '<')
+	// Stop when reaching a command or newline
+	while (textEndPos != currentScript.end() && *textEndPos != '<' && *textEndPos != '\r' && *textEndPos != '\n')
 		++textEndPos;
 	std::string newText{currentPos, textEndPos};
 	std::replace(std::begin(newText), std::end(newText), '=', '\x95'); // Replace all '=' with bullet point
-	text += newText; // TODO is this correct?
+	if (currentLine < textLines.size())
+		textLines[currentLine] += newText;
 	currentPos = textEndPos;
 	updateText = true;
 }
 
 void TSCExecutor::clearText()
 {
-	text.clear();
+	for (std::string& line: textLines)
+		line.clear();
+	currentLine = 0;
 	updateText = true;
 }
 
@@ -134,7 +139,9 @@ void TSCExecutor::writeTextToSurface() const
 	const RECT TextSurfaceRect = {0, 0, 216, 48};
 	csvanilla::CortBox2(&TextSurfaceRect, 0, TextSurfaceID);
 
-	csvanilla::PutText2(0, 0, text.c_str(), RGB(0xFF, 0xFF, 0xFE), TextSurfaceID);
+	for (unsigned i = 0; i < textLines.size(); ++i)
+		if (!textLines[i].empty())
+			csvanilla::PutText2(0, i * 16, textLines[i].c_str(), RGB(0xFF, 0xFF, 0xFE), TextSurfaceID);
 }
 
 void TSCExecutor::jumpEvent(int eventNum)
