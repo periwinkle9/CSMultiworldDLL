@@ -1,6 +1,6 @@
 #pragma once
 
-#include "windows_h_wrapper.h"
+#include <Windows.h>
 // Newer versions of Visual Studio don't support anything earlier than DirectInput8
 #if defined(_MSC_VER) && _MSC_VER >= 1500
 #define DIRECTINPUT_VERSION 0x800
@@ -69,6 +69,7 @@ static auto& gDataPath = *reinterpret_cast<char(*)[MAX_PATH]>(0x49E220);
 static HWND& ghWnd = *reinterpret_cast<HWND*>(0x49E458);
 static BOOL& bActive = *reinterpret_cast<BOOL*>(0x49E468);
 static BOOL& bFPS = *reinterpret_cast<BOOL*>(0x49E464);
+static BOOL& bFullscreen = *reinterpret_cast<BOOL*>(0x49E460);
 static HANDLE& hMutex = *reinterpret_cast<HANDLE*>(0x49E478);
 static HINSTANCE ghInstance = *reinterpret_cast<HINSTANCE*>(0x49E44C);
 static int& windowWidth = *reinterpret_cast<int*>(0x49E450);

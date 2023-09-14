@@ -10,7 +10,7 @@ HEADERS := $(wildcard *.h patches/*.h patches/*/*.h patches/*/*/*.h doukutsu/*.h
 DEF := exports_mingw.def
 
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
-CXXFLAGS := -std=c++11 -Wall -pedantic-errors -m32 -iquote "$(CURDIR)"
+CXXFLAGS := -std=c++20 -Wall -pedantic-errors -m32 -iquote "$(CURDIR)"
 LDFLAGS := -luuid -lole32 -lwinmm -lshlwapi -static -shared -Wl,--subsystem,windows
 
 BIN := $(BINDIR)/dinput.dll

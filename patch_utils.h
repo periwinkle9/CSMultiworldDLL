@@ -12,6 +12,11 @@ namespace patcher
 using byte = std::uint8_t;
 using dword = std::uint32_t;
 
+// Checks that the memory starting at the given address matches the expected bytes
+// Returns true if the bytes match. Use for verifying that you're not about to write
+// a patch that conflicts with an existing ASM hack.
+bool verifyBytes(dword address, const byte expectedBytes[], unsigned size);
+
 // Writes the given bytes to the specified address
 // (Think "Booster's Lab hex patcher")
 void patchBytes(dword address, const byte bytes[], unsigned size);

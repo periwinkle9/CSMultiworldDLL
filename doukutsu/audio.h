@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef DIRECTSOUND_VERSION
+#define DIRECTSOUND_VERSION 0x500
+#endif
 #include <dsound.h>
 
 namespace csvanilla

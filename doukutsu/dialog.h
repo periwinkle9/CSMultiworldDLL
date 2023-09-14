@@ -1,6 +1,6 @@
 #pragma once
 
-#include "windows_h_wrapper.h"
+#include <Windows.h>
 
 namespace csvanilla
 {

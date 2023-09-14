@@ -1,6 +1,7 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 // (You shouldn't need to modify anything in this file.)
-#include "windows_h_wrapper.h"
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 void applyPatches();
 

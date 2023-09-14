@@ -1,4 +1,5 @@
-#include "windows_h_wrapper.h"
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 #include <Shlwapi.h>
 
 static HMODULE getRealDInputDLL()

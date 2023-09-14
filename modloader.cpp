@@ -7,7 +7,8 @@
 
 #ifdef MODLOADER_DLL
 
-#include "windows_h_wrapper.h"
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 // The mod loader expects to find a 'ModEntry' function to call when loading the DLL.
 // For our purposes, though, there is nothing that needs to be implemented here, as

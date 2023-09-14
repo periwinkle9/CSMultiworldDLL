@@ -1,6 +1,6 @@
 #pragma once
 
-#include "windows_h_wrapper.h"
+#include <Windows.h>
 #include <ddraw.h>
 
 namespace csvanilla
@@ -47,11 +47,13 @@ static ::RECT& grcGame = *reinterpret_cast<::RECT*>(0x48F91C);
 static ::RECT& grcFull = *reinterpret_cast<::RECT*>(0x48F92C);
 // Not original names below
 static int& window_magnification = *reinterpret_cast<int*>(0x48F914); // Window magnification
+static BOOL& is_fullscreen = *reinterpret_cast<BOOL*>(0x49CDC0);
 static LPDIRECTDRAW& lpDD = *reinterpret_cast<LPDIRECTDRAW*>(0x49D37C);
 static LPDIRECTDRAWSURFACE& frontbuffer = *reinterpret_cast<LPDIRECTDRAWSURFACE*>(0x49D380);
 static LPDIRECTDRAWSURFACE& backbuffer = *reinterpret_cast<LPDIRECTDRAWSURFACE*>(0x49D384);
 static LPDIRECTDRAWCLIPPER& clipper = *reinterpret_cast<LPDIRECTDRAWCLIPPER*>(0x49CDC4);
 static auto& surf = *reinterpret_cast<LPDIRECTDRAWSURFACE(*)[40]>(0x49D388);
+static auto& surface_metadata = *reinterpret_cast<SurfaceMetadata(*)[40]>(0x49CDC8);
 static ::RECT& backbuffer_rect = *reinterpret_cast<::RECT*>(0x49CDB0);
 static int& scaled_window_width = *reinterpret_cast<int*>(0x49D374);
 static int& scaled_window_height = *reinterpret_cast<int*>(0x49D378);

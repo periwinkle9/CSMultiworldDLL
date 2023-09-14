@@ -1,5 +1,6 @@
 #include "patch_utils.h"
-#include "windows_h_wrapper.h"
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 #include "doukutsu/credits.h"
 
 void applyPostInitPatches();
@@ -7,6 +8,17 @@ void cleanup();
 
 namespace patcher
 {
+
+bool verifyBytes(dword address, const byte expectedBytes[], unsigned size)
+{
+	// Let's assume we have read permissions because I don't want to deal with the case where that's not true
+	// (and that case is probably not happening anyways)
+	const byte* memPtr = reinterpret_cast<const byte*>(address);
+	for (unsigned i = 0; i < size; ++i)
+		if (memPtr[i] != expectedBytes[i])
+			return false;
+	return true;
+}
 
 void patchBytes(dword address, const byte bytes[], unsigned size)
 {
