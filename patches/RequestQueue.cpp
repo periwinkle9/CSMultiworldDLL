@@ -20,6 +20,13 @@ void RequestQueue::push(Request request)
 	pendingRequests.push(std::move(request));
 }
 
+void RequestQueue::pushMultiple(const std::vector<Request>& requests)
+{
+	std::unique_lock<std::mutex> lock{mutex};
+	for (const Request& request : requests)
+		pendingRequests.push(request);
+}
+
 bool RequestQueue::tryPop(Request& poppedRequest)
 {
 	std::unique_lock<std::mutex> lock{mutex, std::try_to_lock};

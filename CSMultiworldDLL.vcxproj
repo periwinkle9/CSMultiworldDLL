@@ -113,8 +113,10 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="modloader.cpp" />
     <ClCompile Include="patches.cpp" />
+    <ClCompile Include="patches\server\Connection.cpp" />
     <ClCompile Include="patches\console.cpp" />
     <ClCompile Include="patches\game_hooks.cpp" />
+    <ClCompile Include="patches\server\Server.cpp" />
     <ClCompile Include="patches\tsc\commands.cpp" />
     <ClCompile Include="patch_utils.cpp" />
     <ClCompile Include="patches\tsc\TSCExecutor.cpp" />
@@ -157,8 +159,11 @@
     <ClInclude Include="doukutsu\valueview.h" />
     <ClInclude Include="doukutsu\weapons.h" />
     <ClInclude Include="doukutsu\window.h" />
+    <ClInclude Include="patches\server\Connection.h" />
+    <ClInclude Include="patches\server\ConnectionManager.h" />
     <ClInclude Include="patches\console.h" />
     <ClInclude Include="patches\game_hooks.h" />
+    <ClInclude Include="patches\server\Server.h" />
     <ClInclude Include="patch_utils.h" />
     <ClInclude Include="patches\tsc\TSCExecutor.h" />
     <ClInclude Include="patches\RequestQueue.h" />

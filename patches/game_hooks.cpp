@@ -7,6 +7,8 @@
 namespace
 {
 
+using Request = RequestQueue::Request;
+
 void handleRequest(const Request& request)
 {
 	switch (request.type)
@@ -49,10 +51,10 @@ void PutTextScriptWrapper()
 
 void applyTSCHooks()
 {
-	const patcher::dword TextScriptProcCalls[] = {0x401E34, 0x40F8EE, 0x4107EE, 0x41DAD8};
+	const patcher::dword TextScriptProcCalls[] = {0x4107EE}; /* {0x401E34, 0x40F8EE, 0x4107EE, 0x41DAD8} */;
 	for (patcher::dword address : TextScriptProcCalls)
 		patcher::writeCall(address, TextScriptProcWrapper);
-	const patcher::dword PutTextScriptCalls[] = {0x401E7F, 0x40F91F, 0x41086F, 0x41DB23};
+	const patcher::dword PutTextScriptCalls[] = {0x41086F}; /* {0x401E7F, 0x40F91F, 0x41086F, 0x41DB23} */;
 	for (patcher::dword address : PutTextScriptCalls)
 		patcher::writeCall(address, PutTextScriptWrapper);
 }

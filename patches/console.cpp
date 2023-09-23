@@ -10,6 +10,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include "RequestQueue.h"
+#include "server/Server.h"
 
 class ConsoleManager
 {
@@ -68,10 +69,21 @@ void ConsoleManager::handleInputs()
 			else
 				break;
 		}
-		if (requestQueue != nullptr)
+		if (command == "kill_server")
 		{
-			Request request;
-			request.type = Request::RequestType::SCRIPT;
+			if (tcpServer != nullptr)
+			{
+				std::cout << "Sending server kill command" << std::endl;
+				tcpServer->forceStop();
+				std::cout << "Killed the server" << std::endl;
+			}
+			else
+				std::cout << "Server not initialized" << std::endl;
+		}
+		else if (requestQueue != nullptr)
+		{
+			RequestQueue::Request request;
+			request.type = RequestQueue::Request::RequestType::SCRIPT;
 			request.script = std::move(command);
 			requestQueue->push(std::move(request));
 			std::cout << "Command sent." << std::endl;

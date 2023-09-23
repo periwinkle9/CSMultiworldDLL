@@ -1,6 +1,7 @@
 #include "patch_utils.h"
 #include "patches/console.h"
 #include "patches/tsc/TSCExecutor.h"
+#include "patches/server/Server.h"
 #include "patches/RequestQueue.h"
 #include "patches/game_hooks.h"
 
@@ -20,6 +21,7 @@ void applyPostInitPatches()
 	initConsole();
 	initTSC2();
 	initRequestQueue();
+	tcpServer = new Server(5451);
 }
 
 /* If patcher::setupCleanupHook() is called above, then this function will be called
@@ -27,6 +29,9 @@ void applyPostInitPatches()
 */
 void cleanup()
 {
+	tcpServer->stop();
+	delete tcpServer;
+	tcpServer = nullptr;
 	exitConsole();
 	endTSC2();
 	endRequestQueue();
