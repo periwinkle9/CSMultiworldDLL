@@ -11,6 +11,7 @@ class Server
 	asio::io_context io_context;
 	asio::ip::tcp::acceptor acceptor;
 	ConnectionManager activeConnections;
+	bool isRunning;
 
 public:
 	Server(); // Construct server without starting it

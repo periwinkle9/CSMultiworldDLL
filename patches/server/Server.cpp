@@ -31,7 +31,7 @@ awaitable<void> listener(tcp::acceptor& acceptor, ConnectionManager& connectionM
 
 }
 
-Server::Server() : serverThread{}, io_context{}, acceptor{io_context}, activeConnections{}
+Server::Server() : serverThread{}, io_context{}, acceptor{io_context}, activeConnections{}, isRunning{false}
 {}
 Server::Server(unsigned short port) : Server{}
 {
@@ -50,21 +50,30 @@ void Server::start(unsigned short port)
 		std::cout << "Starting server on port " << port << std::endl;
 		io_context.run();
 	});
+	isRunning = true;
 }
 
 void Server::stop()
 {
-	// Post connection stop request
-	asio::post(io_context, [this]() {
-		acceptor.close();
-		activeConnections.stopAll();
-		});
-	// Wait until everything shuts down and io_context.run() returns
-	serverThread.join();
+	if (isRunning)
+	{
+		// Post connection stop request
+		asio::post(io_context, [this]() {
+			acceptor.close();
+			activeConnections.stopAll();
+			});
+		// Wait until everything shuts down and io_context.run() returns
+		serverThread.join();
+		isRunning = false;
+	}
 }
 
 void Server::forceStop()
 {
-	io_context.stop(); // Kill the event loop; io_context.run() should return soon after this
-	serverThread.join();
+	if (isRunning)
+	{
+		io_context.stop(); // Kill the event loop; io_context.run() should return soon after this
+		serverThread.join();
+		isRunning = false;
+	}
 }
