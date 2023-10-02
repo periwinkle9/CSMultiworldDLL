@@ -18,7 +18,9 @@ void applyPatches()
  */
 void applyPostInitPatches()
 {
+#ifdef _DEBUG
 	initConsole();
+#endif
 	initTSC2();
 	initRequestQueue();
 	tcpServer = new Server(5451);
@@ -32,7 +34,9 @@ void cleanup()
 	tcpServer->stop();
 	delete tcpServer;
 	tcpServer = nullptr;
+#ifdef _DEBUG
 	exitConsole();
+#endif
 	endTSC2();
 	endRequestQueue();
 }

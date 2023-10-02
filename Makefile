@@ -27,6 +27,7 @@ endif
 all: release
 release: OFLAGS += -O2 -s
 debug: OFLAGS += -g
+debug: CXXFLAGS += -D_DEBUG
 
 release debug: $(BIN)
 
