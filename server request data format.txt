@@ -1,0 +1,42 @@
+This is all WIP and subject to change based on whatever makes the RDV connector
+easier to implement. (I'll keep this document updated throughout, of course.)
+
+Data format:
+
+Header (t, n):
+t (1 byte) - request type
+n (4 bytes, little-endian) - size in bytes of the following data
+
+Request data:
+
+Type 0 - TBD, currently just echos the request back
+ (reserved for handshake/is alive check or whatever is most suitable)
+  data: n-byte string
+  server response: header (0, n) + the same n bytes
+
+Type 1 - Execute a script
+  data: n-byte script to be executed
+  server response:
+    if script was queued for execution successfully, header (1, 0) + no data
+    if something went wrong, header (-1, 0) + no data
+
+Type 2 - Get flag state
+  data: array of n/4 signed 4-byte flag numbers, little-endian
+  server response: header (2, n/4) + array of 1-byte 0/1 values corresponding to the
+                   state of the requested flags
+
+Type 3 - Queue multiple event numbers
+  data: array of n/4 signed 4-byte event numbers, little-endian
+        (the events will be ran sequentially within the current map's script,
+        so you'd best only specify events from Head.tsc!)
+  server response:
+    on success, header (3, 0) + no data
+    on failure, header (-1, 0) + no data
+
+Type -1 (255) - Disconnect
+ The client can just close the connection itself, so you probably don't actually
+ need this. But if you want the server to close the connection instead then
+ here you go, I guess...(this command only closes the current connection, not the
+ entire server)
+  data: none
+  server response: none (connection will be closed)
