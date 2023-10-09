@@ -33,6 +33,20 @@ Type 3 - Queue multiple event numbers
     on success, header (3, 0) + no data
     on failure, header (-1, 0) + no data
 
+Type 4 - Read memory
+  data: 4-byte starting address + unsigned 2-byte count (both little-endian)
+  server response:
+    on success, header (4, count) + array of count bytes which are the contents of
+                the game process's memory starting at the requested address
+    on failure, header (-1, 0) + no data
+
+Type 5 - Write memory
+  data: 4-byte starting address, little endian + array of n-4 bytes to be written
+        to the game process's memory starting at that address
+  server response:
+    on success, header (5, 0) + no data
+    on failure, header (-1, 0) + no data
+
 Type -1 (255) - Disconnect
  The client can just close the connection itself, so you probably don't actually
  need this. But if you want the server to close the connection instead then

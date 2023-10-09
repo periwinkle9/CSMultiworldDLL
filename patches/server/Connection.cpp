@@ -12,6 +12,8 @@
 #include <asio/write.hpp>
 #include "../RequestQueue.h"
 #include "doukutsu/flags.h"
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 using asio::ip::tcp;
 
@@ -81,7 +83,7 @@ static std::vector<std::int32_t> parseNumberList(const std::vector<char>& data)
 
 void Connection::prepareResponse()
 {
-	enum RequestType: unsigned char {ECHO, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, DISCONNECT = 255};
+	enum RequestType: unsigned char {ECHO, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, READ_MEMORY, WRITE_MEMORY, DISCONNECT = 255};
 
 	std::cout << "Received request: type = " << static_cast<int>(request.header[0]) << ", size = " << request.data.size() << std::endl;
 	/*
@@ -172,6 +174,46 @@ void Connection::prepareResponse()
 			response.resize(5);
 		}
 		break;
+	case READ_MEMORY:
+		if (request.data.size() == 6)
+		{
+			std::uint32_t startAddress = 0;
+			for (int i = 0; i < 4; ++i)
+				startAddress |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
+			std::uint16_t numBytes = static_cast<unsigned char>(request.data[4]) | (static_cast<unsigned char>(request.data[5]) << 8);
+			std::cout << "Reading " << numBytes << " bytes of memory starting at address " << std::hex << startAddress << std::dec << std::endl;
+			response.push_back(READ_MEMORY);
+			response.push_back(request.data[4]);
+			response.push_back(request.data[5]);
+			response.resize(5 + numBytes);
+			// No synchronization being performed here, hopefully that won't cause problems (words spoken before disaster)
+			if (!ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(startAddress), response.data() + 5, numBytes, nullptr))
+			{
+				std::cout << "Failed to read memory!" << std::endl;
+				response.clear();
+			}
+		}
+
+		if (response.empty()) // Error occurred
+		{
+			response.push_back(-1);
+			response.resize(5);
+		}
+		break;
+	case WRITE_MEMORY:
+	{
+		response.resize(5);
+		std::uint32_t startAddress = 0;
+		for (int i = 0; i < 4; ++i)
+			startAddress |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
+		std::cout << "Writing " << request.data.size() - 4 << " bytes of memory starting at address " << std::hex << startAddress << std::dec << std::endl;
+		// No synchronization being performed here, hopefully that won't cause problems (words spoken before disaster)
+		if (WriteProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(startAddress), request.data.data() + 4, request.data.size() - 4, nullptr))
+			response[0] = WRITE_MEMORY;
+		else
+			response[0] = -1;
+		break;
+	}
 	case DISCONNECT:
 		std::cout << "Received disconnect signal; ending connection" << std::endl;
 		connectionManager.stop(shared_from_this());
