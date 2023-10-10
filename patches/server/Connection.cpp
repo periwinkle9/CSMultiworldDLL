@@ -11,6 +11,7 @@
 #include <asio/use_awaitable.hpp>
 #include <asio/write.hpp>
 #include "../RequestQueue.h"
+#include "../game_hooks.h"
 #include "doukutsu/flags.h"
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -83,7 +84,7 @@ static std::vector<std::int32_t> parseNumberList(const std::vector<char>& data)
 
 void Connection::prepareResponse()
 {
-	enum RequestType: unsigned char {ECHO, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, READ_MEMORY, WRITE_MEMORY, DISCONNECT = 255};
+	enum RequestType: unsigned char {ECHO, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, READ_MEMORY, WRITE_MEMORY, QUERY_GAME_STATE, DISCONNECT = 255};
 
 	std::cout << "Received request: type = " << static_cast<int>(request.header[0]) << ", size = " << request.data.size() << std::endl;
 	/*
@@ -214,6 +215,12 @@ void Connection::prepareResponse()
 			response[0] = -1;
 		break;
 	}
+	case QUERY_GAME_STATE:
+		response.push_back(QUERY_GAME_STATE);
+		response.push_back(1);
+		response.resize(5);
+		response.push_back(static_cast<char>(currentGameMode.load()));
+		break;
 	case DISCONNECT:
 		std::cout << "Received disconnect signal; ending connection" << std::endl;
 		connectionManager.stop(shared_from_this());

@@ -8,7 +8,7 @@ namespace csvanilla
 {
 
 // These void* parameters are technically HWND, but I'm not #include-ing Windows.h just for that typedef
-const auto Scene_DownIsland = reinterpret_cast<void(*)(void*, int)>(0x40DB70);
+const auto Scene_DownIsland = reinterpret_cast<int(*)(void*, int)>(0x40DB70);
 const auto Call_Escape = reinterpret_cast<int(*)(void*)>(0x40DD70);
 const auto Game = reinterpret_cast<BOOL(*)(void*)>(0x40F5F0);
 const auto ModeOpening = reinterpret_cast<int(*)(void*)>(0x40F730);

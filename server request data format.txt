@@ -47,6 +47,20 @@ Type 5 - Write memory
     on success, header (5, 0) + no data
     on failure, header (-1, 0) + no data
 
+Type 6 - Query game state
+  data: none...although perhaps in the future we could extend this to return different
+        kinds of information if needed
+  server response: header (6, 1) + 1 byte denoting the current game execution state:
+     0: intro cutscene (ModeOpening())
+     //1: title screen (ModeTitle()) (disabled, not working)
+     2: main game loop (ModeAction())
+     3: inventory screen (CampLoop())
+     4: teleporter menu (StageSelectLoop())
+     5: minimap display (MiniMapLoop())
+     6: island falling cutscene (Scene_DownIsland())
+     7: Esc menu (Call_Escape())
+    -1: none of the above (game initializing/de-initializing or title screen ;) )
+
 Type -1 (255) - Disconnect
  The client can just close the connection itself, so you probably don't actually
  need this. But if you want the server to close the connection instead then

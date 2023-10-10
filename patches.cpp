@@ -11,6 +11,7 @@ void applyPatches()
 	patcher::setupPostInitHook();
 	patcher::setupCleanupHook();
 	applyTSCHooks();
+	hookGameLoops();
 }
 
 /* If patcher::setupPostInitHook() is called above, then this function will be called
