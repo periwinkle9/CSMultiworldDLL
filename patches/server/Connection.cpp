@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <iostream>
 #include <format>
+#include <string_view>
 #include <asio/buffer.hpp>
 #include <asio/co_spawn.hpp>
 #include <asio/detached.hpp>
@@ -117,6 +118,13 @@ void Connection::prepareResponse()
 	std::cout << std::dec << std::endl;
 	*/
 
+	auto makeError = [this](std::string_view message) {
+		response.clear();
+		response.push_back(-1);
+		for (int i = 0; i < 4; ++i)
+			response.push_back(static_cast<char>((message.size() >> (i * 8)) & 0xFF));
+		response.insert(response.end(), message.begin(), message.end());
+	};
 	response.clear();
 	switch (request.header[0])
 	{
@@ -146,8 +154,7 @@ void Connection::prepareResponse()
 		{
 			// Request queue not available? That's not good...
 			std::cout << "Failed to queue script execution: event queue not initialized" << std::endl;
-			response.push_back(-1); // Send back error status
-			response.resize(5);
+			makeError("[1] Event queue not initialized"); // Send back error status
 		}
 		break;
 	case GET_FLAGS:
@@ -197,8 +204,7 @@ void Connection::prepareResponse()
 		{
 			// Request queue not available? That's not good...
 			std::cout << "Failed to queue script execution: event queue not initialized" << std::endl;
-			response.push_back(-1); // Send back error status
-			response.resize(5);
+			makeError("[3] Event queue not initialized"); // Send back error status
 		}
 		break;
 	case READ_MEMORY:
@@ -217,15 +223,11 @@ void Connection::prepareResponse()
 			if (!ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(startAddress), response.data() + 5, numBytes, nullptr))
 			{
 				std::cout << "Failed to read memory!" << std::endl;
-				response.clear();
+				makeError(std::format("[4] ReadProcessMemory failed: error code {}", GetLastError()));
 			}
 		}
-
-		if (response.empty()) // Error occurred
-		{
-			response.push_back(-1);
-			response.resize(5);
-		}
+		else
+			makeError(std::format("[4] Unexpected request size (expected 6, received {} bytes)", request.data.size()));
 		break;
 	case WRITE_MEMORY:
 	{
@@ -238,7 +240,7 @@ void Connection::prepareResponse()
 		if (WriteProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(startAddress), request.data.data() + 4, request.data.size() - 4, nullptr))
 			response[0] = WRITE_MEMORY;
 		else
-			response[0] = -1;
+			makeError(std::format("[5] WriteProcessMemory failed: error code {}", GetLastError()));
 		break;
 	}
 	case QUERY_GAME_STATE:
@@ -257,7 +259,6 @@ void Connection::prepareResponse()
 			std::cout << static_cast<int>(byte) << ' ';
 		std::cout << std::dec << std::endl;
 
-		response.push_back(-1); // Send back error status
-		response.resize(5);
+		makeError(std::format("[{}] Unknown request type", static_cast<int>(request.header[0])));
 	}
 }

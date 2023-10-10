@@ -26,7 +26,7 @@ Type 1 - Execute a script
   data: n-byte script to be executed
   server response:
     if script was queued for execution successfully, header (1, 0) + no data
-    if something went wrong, header (-1, 0) + no data
+    if something went wrong, header (-1, m) + m byte string describing the error
 
 Type 2 - Get flag state
   data: array of n/4 signed 4-byte flag numbers, little-endian
@@ -39,21 +39,21 @@ Type 3 - Queue multiple event numbers
         so you'd best only specify events from Head.tsc!)
   server response:
     on success, header (3, 0) + no data
-    on failure, header (-1, 0) + no data
+    on failure, header (-1, m) + m byte string describing the error
 
 Type 4 - Read memory
   data: 4-byte starting address + unsigned 2-byte count (both little-endian)
   server response:
     on success, header (4, count) + array of count bytes which are the contents of
                 the game process's memory starting at the requested address
-    on failure, header (-1, 0) + no data
+    on failure, header (-1, m) + m byte string describing the error
 
 Type 5 - Write memory
   data: 4-byte starting address, little endian + array of n-4 bytes to be written
         to the game process's memory starting at that address
   server response:
     on success, header (5, 0) + no data
-    on failure, header (-1, 0) + no data
+    on failure, header (-1, m) + m byte string describing the error
 
 Type 6 - Query game state
   data: none...although perhaps in the future we could extend this to return different
