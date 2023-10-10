@@ -4,6 +4,7 @@
 #include "patches/server/Server.h"
 #include "patches/RequestQueue.h"
 #include "patches/game_hooks.h"
+#include "patches/uuid.h"
 
 // Initialization function called when the DLL is first loaded
 void applyPatches()
@@ -12,6 +13,7 @@ void applyPatches()
 	patcher::setupCleanupHook();
 	applyTSCHooks();
 	hookGameLoops();
+	patchUUIDChecks();
 }
 
 /* If patcher::setupPostInitHook() is called above, then this function will be called
@@ -19,6 +21,7 @@ void applyPatches()
  */
 void applyPostInitPatches()
 {
+	loadUUID();
 #ifdef _DEBUG
 	initConsole();
 #endif
