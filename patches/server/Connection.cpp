@@ -4,6 +4,7 @@
 #include <exception>
 #include <cstdint>
 #include <iostream>
+#include <format>
 #include <asio/buffer.hpp>
 #include <asio/co_spawn.hpp>
 #include <asio/detached.hpp>
@@ -12,7 +13,9 @@
 #include <asio/write.hpp>
 #include "../RequestQueue.h"
 #include "../game_hooks.h"
+#include "../uuid.h"
 #include "doukutsu/flags.h"
+#include "doukutsu/map.h"
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
@@ -82,9 +85,29 @@ static std::vector<std::int32_t> parseNumberList(const std::vector<char>& data)
 	return output;
 }
 
+static std::string getServerInfoString()
+{
+	constexpr int API_Version = 0;
+	// Manually construct JSON string :')
+	constexpr char outputFormat[] = R"!!({{
+	"api_version": {},
+	"platform": "{}",
+	"uuid": "{}",
+	"offsets": {{
+		"flags": {},
+		"map_flags": {}
+	}}
+}})!!";
+	/*if (!uuidInitialized)
+		loadUUID();*/ // Just in case
+	return std::format(outputFormat, API_Version, "freeware", getUUIDString(),
+		reinterpret_cast<std::uint32_t>(&csvanilla::gFlagNPC),
+		reinterpret_cast<std::uint32_t>(&csvanilla::gMapping));
+}
+
 void Connection::prepareResponse()
 {
-	enum RequestType: unsigned char {ECHO, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, READ_MEMORY, WRITE_MEMORY, QUERY_GAME_STATE, DISCONNECT = 255};
+	enum RequestType: unsigned char {HANDSHAKE, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, READ_MEMORY, WRITE_MEMORY, QUERY_GAME_STATE, DISCONNECT = 255};
 
 	std::cout << "Received request: type = " << static_cast<int>(request.header[0]) << ", size = " << request.data.size() << std::endl;
 	/*
@@ -97,12 +120,15 @@ void Connection::prepareResponse()
 	response.clear();
 	switch (request.header[0])
 	{
-	case ECHO:
-		// For now, let's just send the exact same thing back
-		std::cout << "Echo message: " << std::string(request.data.begin(), request.data.end()) << std::endl;
-		response = std::move(request.data);
-		response.insert(response.begin(), request.header.begin(), request.header.end());
+	case HANDSHAKE:
+	{
+		std::string serverInfo = getServerInfoString();
+		response.push_back(HANDSHAKE);
+		for (int i = 0; i < 4; ++i)
+			response.push_back(static_cast<char>((serverInfo.size() >> (i * 8)) & 0xFF));
+		response.insert(response.end(), serverInfo.begin(), serverInfo.end());
 		break;
+	}
 	case EXEC_SCRIPT:
 		if (requestQueue != nullptr)
 		{

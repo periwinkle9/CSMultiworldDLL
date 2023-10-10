@@ -9,10 +9,18 @@ n (4 bytes, little-endian) - size in bytes of the following data
 
 Request data:
 
-Type 0 - TBD, currently just echos the request back
- (reserved for handshake/is alive check or whatever is most suitable)
-  data: n-byte string
-  server response: header (0, n) + the same n bytes
+Type 0 - Get server info
+  data: none (ignored)
+  server response: header (0, n) + n-byte JSON string describing the current game:
+    {
+    	"api_version": 0,
+    	"platform": "freeware",
+    	"uuid": "{00000000-0000-0000-0000-000000000000}",
+    	"offsets": {
+    		"flags": 4840864,
+    		"map_flags": 4842936
+    	}
+    }   
 
 Type 1 - Execute a script
   data: n-byte script to be executed
