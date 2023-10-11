@@ -16,7 +16,9 @@
 #include "../game_hooks.h"
 #include "../uuid.h"
 #include "doukutsu/flags.h"
+#include "doukutsu/inventory.h"
 #include "doukutsu/map.h"
+#include "doukutsu/player.h"
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
@@ -96,14 +98,20 @@ static std::string getServerInfoString()
 	"uuid": "{}",
 	"offsets": {{
 		"flags": {},
-		"map_flags": {}
+		"map_flags": {},
+		"arms_data": {},
+		"current_hp": {},
+		"max_hp": {}
 	}}
 }})!!";
 	/*if (!uuidInitialized)
 		loadUUID();*/ // Just in case
 	return std::format(outputFormat, API_Version, "freeware", getUUIDString(),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gFlagNPC),
-		reinterpret_cast<std::uint32_t>(&csvanilla::gMapping));
+		reinterpret_cast<std::uint32_t>(&csvanilla::gMapping),
+		reinterpret_cast<std::uint32_t>(&csvanilla::gArmsData),
+		reinterpret_cast<std::uint32_t>(&csvanilla::gMC.life),
+		reinterpret_cast<std::uint32_t>(&csvanilla::gMC.max_life));
 }
 
 void Connection::prepareResponse()
@@ -244,11 +252,30 @@ void Connection::prepareResponse()
 		break;
 	}
 	case QUERY_GAME_STATE:
+	{
 		response.push_back(QUERY_GAME_STATE);
-		response.push_back(1);
-		response.resize(5);
-		response.push_back(static_cast<char>(currentGameMode.load()));
+		int type = request.data.empty() ? 0 : static_cast<int>(request.data.front());
+		switch (type)
+		{
+		case 0: // Get current execution mode
+			response.push_back(1);
+			response.resize(5);
+			response.push_back(static_cast<char>(currentGameMode.load()));
+			break;
+		case 1: // Get current map (internal) name
+		{
+			std::string_view mapName{csvanilla::gTMT[csvanilla::gStageNo].map};
+			for (int i = 0; i < 4; ++i)
+				response.push_back(static_cast<char>((mapName.size() >> (i * 8)) & 0xFF));
+			response.insert(response.end(), mapName.begin(), mapName.end());
+			break;
+		}
+		default:
+			makeError(std::format("[6] Unknown request type {}", type));
+		}
+
 		break;
+	}
 	case DISCONNECT:
 		std::cout << "Received disconnect signal; ending connection" << std::endl;
 		connectionManager.stop(shared_from_this());
