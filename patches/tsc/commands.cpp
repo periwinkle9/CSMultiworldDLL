@@ -277,13 +277,17 @@ auto TSCExecutor::processCommand() -> CommandStatus
 			keepProcessing = false;
 		break;
 	case TSCcmd<'F','L','J'>::value:
+	{
 		if (!hasArgs(2))
 			return CommandStatus::ISTEXT;
-		if (csvanilla::GetNPCFlag(getArg(1)))
+		int flagNum = getArg(1);
+		// Always treat flag 7998 as set (used as an indicator that this TSC parser is running the event, not the main game's)
+		if (flagNum == 7998 || csvanilla::GetNPCFlag(flagNum))
 			jumpEvent(getArg(2));
 		else
 			currentPos += 13;
 		break;
+	}
 	case TSCcmd<'S','K','J'>::value:
 		if (!hasArgs(2))
 			return CommandStatus::ISTEXT;
