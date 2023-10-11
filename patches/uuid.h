@@ -3,7 +3,7 @@
 #include <string>
 #include <guiddef.h>
 
-extern GUID uuid;
+extern IID uuid;
 extern bool uuidInitialized;
 
 void loadUUID();

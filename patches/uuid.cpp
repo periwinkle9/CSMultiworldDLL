@@ -2,6 +2,7 @@
 #include <fstream>
 #include <filesystem>
 #include <cstring>
+#include <string>
 #include "doukutsu/map.h"
 #include "doukutsu/profile.h"
 #include "doukutsu/window.h"
@@ -10,7 +11,7 @@
 #include <Windows.h>
 #include <objbase.h>
 
-GUID uuid;
+IID uuid;
 bool uuidInitialized = false;
 
 void loadUUID()
@@ -19,10 +20,10 @@ void loadUUID()
 	{
 		std::filesystem::path uuidPath{csvanilla::gDataPath};
 		uuidPath /= "uuid.txt";
-		std::ifstream ifs{uuidPath, std::ios::binary};
-		if (ifs)
+		std::wifstream ifs{uuidPath};
+		std::wstring line;
+		if (ifs && std::getline(ifs, line) && IIDFromString(line.c_str(), &uuid) == S_OK)
 		{
-			ifs.read(reinterpret_cast<char*>(&uuid), sizeof uuid);
 			uuidInitialized = true;
 		}
 	}
