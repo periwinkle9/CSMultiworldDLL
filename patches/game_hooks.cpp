@@ -7,6 +7,7 @@
 #include "doukutsu/misc.h"
 #include "doukutsu/teleporter.h"
 #include "doukutsu/tsc.h"
+#include "doukutsu/window.h"
 
 namespace
 {
@@ -18,10 +19,10 @@ void handleRequest(const Request& request)
 	switch (request.type)
 	{
 	case Request::RequestType::SCRIPT:
-		secondaryTSCParser->runScript(request.script);
+		secondaryTSCParser->runScript(std::any_cast<std::string>(request.data));
 		break;
 	case Request::RequestType::EVENTNUM:
-		secondaryTSCParser->runEvent(request.eventNum);
+		secondaryTSCParser->runEvent(std::any_cast<int>(request.data));
 		break;
 	}
 }
@@ -34,7 +35,7 @@ int TextScriptProcWrapper()
 		if (!secondaryTSCParser->isRunning())
 		{
 			Request request;
-			if (requestQueue != nullptr && requestQueue->tryPop(request))
+			if (requestQueue != nullptr && requestQueue->tryPopTSC(request))
 				handleRequest(request);
 		}
 		secondaryTSCParser->tick();
@@ -51,7 +52,22 @@ void PutTextScriptWrapper()
 		secondaryTSCParser->draw();
 }
 
+// Replaces the call to SystemTask()
+int SystemTaskWrapper()
+{
+	if (requestQueue != nullptr)
+		requestQueue->fulfillAll();
+	return csvanilla::SystemTask();
+}
+
 } // end anonymous namespace
+
+void applyGameHooks()
+{
+	applyTSCHooks();
+	hookGameLoops();
+	patcher::writeCall(0x40B34C, SystemTaskWrapper);
+}
 
 void applyTSCHooks()
 {

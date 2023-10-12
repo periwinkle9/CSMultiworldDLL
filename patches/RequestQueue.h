@@ -4,25 +4,29 @@
 #include <vector>
 #include <queue>
 #include <mutex>
+#include <any>
 
 class RequestQueue
 {
 public:
 	struct Request
 	{
-		enum class RequestType { SCRIPT, EVENTNUM } type;
-		std::string script;
-		int eventNum;
+		enum class RequestType { SCRIPT, EVENTNUM, FLAGS, MEMREAD, MEMWRITE } type;
+		std::any data;
 	};
 private:
 	std::queue<Request> pendingRequests;
-	std::mutex mutex;
+	std::queue<Request> pendingTSC;
+	std::mutex requestMutex;
+	std::mutex tscMutex;
 
 public:
 	RequestQueue() = default;
 	void push(Request request);
 	void pushMultiple(const std::vector<Request>& requests);
-	bool tryPop(Request& poppedValue);
+	bool tryPopTSC(Request& poppedValue);
+	void clearTSCQueue();
+	void fulfillAll();
 };
 
 extern RequestQueue* requestQueue;

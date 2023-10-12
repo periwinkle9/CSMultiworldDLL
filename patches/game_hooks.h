@@ -2,6 +2,7 @@
 
 #include <atomic>
 
+void applyGameHooks();
 void applyTSCHooks();
 void hookGameLoops();
 enum class GameMode {INIT = -1, OPENING, TITLE, ACTION, INVENTORY, TELEPORTER, MINIMAP, ISLAND_FALLING, ESCAPE};

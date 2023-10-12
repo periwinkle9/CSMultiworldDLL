@@ -84,7 +84,7 @@ void ConsoleManager::handleInputs()
 		{
 			RequestQueue::Request request;
 			request.type = RequestQueue::Request::RequestType::SCRIPT;
-			request.script = std::move(command);
+			request.data = std::move(command);
 			requestQueue->push(std::move(request));
 			std::cout << "Command sent." << std::endl;
 		}

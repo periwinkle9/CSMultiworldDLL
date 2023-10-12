@@ -12,8 +12,7 @@ void applyPatches()
 {
 	patcher::setupPostInitHook();
 	patcher::setupCleanupHook();
-	applyTSCHooks();
-	hookGameLoops();
+	applyGameHooks();
 	patchUUIDChecks();
 }
 

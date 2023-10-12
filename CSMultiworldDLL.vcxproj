@@ -159,6 +159,7 @@
     <ClInclude Include="doukutsu\valueview.h" />
     <ClInclude Include="doukutsu\weapons.h" />
     <ClInclude Include="doukutsu\window.h" />
+    <ClInclude Include="patches\RequestTypes.h" />
     <ClInclude Include="patches\server\Connection.h" />
     <ClInclude Include="patches\server\ConnectionManager.h" />
     <ClInclude Include="patches\console.h" />

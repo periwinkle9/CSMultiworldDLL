@@ -6,6 +6,7 @@
 #include <iostream>
 #include <format>
 #include <string_view>
+#include <chrono>
 #include <asio/buffer.hpp>
 #include <asio/co_spawn.hpp>
 #include <asio/detached.hpp>
@@ -13,6 +14,7 @@
 #include <asio/use_awaitable.hpp>
 #include <asio/write.hpp>
 #include "../RequestQueue.h"
+#include "../RequestTypes.h"
 #include "../game_hooks.h"
 #include "../uuid.h"
 #include "doukutsu/flags.h"
@@ -150,9 +152,9 @@ void Connection::prepareResponse()
 		{
 			RequestQueue::Request event;
 			event.type = RequestQueue::Request::RequestType::SCRIPT;
-			event.script = std::string(request.data.begin(), request.data.end());
+			event.data = std::string(request.data.begin(), request.data.end());
 			
-			std::cout << "Queueing execution of script: " << event.script << std::endl;
+			std::cout << "Queueing execution of script: " << std::any_cast<std::string>(event.data) << std::endl;
 			requestQueue->push(std::move(event));
 			
 			response.push_back(EXEC_SCRIPT);
@@ -167,22 +169,38 @@ void Connection::prepareResponse()
 		break;
 	case GET_FLAGS:
 	{
-		std::vector<std::int32_t> flagList = parseNumberList(request.data);
+		RequestTypes::FlagRequest flagRequest{};
+		flagRequest.flags = parseNumberList(request.data);
 		std::cout << "Received request for flags: ";
-		for (std::int32_t flag : flagList)
+		for (std::int32_t flag : flagRequest.flags)
 			std::cout << flag << ' ';
 		std::cout << std::endl;
 
-		response.reserve(flagList.size() + 5);
+		response.reserve(flagRequest.flags.size() + 5);
 		response.push_back(GET_FLAGS);
 		// Write response length
 		for (int i = 0; i < 4; ++i)
-			response.push_back(static_cast<char>((flagList.size() >> (i * 8)) & 0xFF));
+			response.push_back(static_cast<char>((flagRequest.flags.size() >> (i * 8)) & 0xFF));
 
-		// This gFlagNPC access is completely unsynchronized. Is that a problem?
-		auto getFlag = [](std::int32_t flagNum) -> bool { return (csvanilla::gFlagNPC[flagNum / 8] & (1 << (flagNum % 8))) != 0; };
-		for (auto flag : flagList)
-			response.push_back(getFlag(flag));
+		// Submit request and wait for it to be fulfilled
+		flagRequest.fulfilled = false;
+		if (requestQueue != nullptr)
+		{
+			RequestQueue::Request req;
+			req.type = RequestQueue::Request::RequestType::FLAGS;
+			req.data = &flagRequest;
+			requestQueue->push(std::move(req));
+
+			using namespace std::chrono_literals;
+			std::unique_lock<std::mutex> lock{flagRequest.mutex};
+			if (flagRequest.cv.wait_for(lock, 1s, [&flagRequest]() -> bool { return flagRequest.fulfilled; }))
+				response.insert(response.end(), flagRequest.result.begin(), flagRequest.result.end());
+			else
+				makeError("[2] Request timed out");
+		}
+		else
+			makeError("[2] Request queue not initialized");
+
 		break;
 	}
 	case QUEUE_EVENTS:
@@ -200,7 +218,7 @@ void Connection::prepareResponse()
 			{
 				RequestQueue::Request req;
 				req.type = RequestQueue::Request::RequestType::EVENTNUM;
-				req.eventNum = eventNum;
+				req.data = eventNum;
 				eventRequests.push_back(req);
 			}
 			requestQueue->pushMultiple(eventRequests);
@@ -218,37 +236,80 @@ void Connection::prepareResponse()
 	case READ_MEMORY:
 		if (request.data.size() == 6)
 		{
-			std::uint32_t startAddress = 0;
+			RequestTypes::MemoryReadRequest memReadReq{};
+			memReadReq.address = 0;
 			for (int i = 0; i < 4; ++i)
-				startAddress |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
-			std::uint16_t numBytes = static_cast<unsigned char>(request.data[4]) | (static_cast<unsigned char>(request.data[5]) << 8);
-			std::cout << "Reading " << numBytes << " bytes of memory starting at address " << std::hex << startAddress << std::dec << std::endl;
+				memReadReq.address |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
+			memReadReq.numBytes = static_cast<unsigned char>(request.data[4]) | (static_cast<unsigned char>(request.data[5]) << 8);
+			std::cout << "Reading " << memReadReq.numBytes << " bytes of memory starting at address " << std::hex << memReadReq.address << std::dec << std::endl;
 			response.push_back(READ_MEMORY);
 			response.push_back(request.data[4]);
 			response.push_back(request.data[5]);
-			response.resize(5 + numBytes);
-			// No synchronization being performed here, hopefully that won't cause problems (words spoken before disaster)
-			if (!ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(startAddress), response.data() + 5, numBytes, nullptr))
+			response.resize(5);
+
+			// Submit request and wait for it to be fulfilled
+			memReadReq.fulfilled = false;
+			if (requestQueue != nullptr)
 			{
-				std::cout << "Failed to read memory!" << std::endl;
-				makeError(std::format("[4] ReadProcessMemory failed: error code {}", GetLastError()));
+				RequestQueue::Request req;
+				req.type = RequestQueue::Request::RequestType::MEMREAD;
+				req.data = &memReadReq;
+				requestQueue->push(std::move(req));
+
+				using namespace std::chrono_literals;
+				std::unique_lock<std::mutex> lock{memReadReq.mutex};
+				if (memReadReq.cv.wait_for(lock, 1s, [&memReadReq]() -> bool { return memReadReq.fulfilled; }))
+				{
+					if (memReadReq.errorCode == 0)
+						response.insert(response.end(), memReadReq.result.begin(), memReadReq.result.end());
+					else
+					{
+						std::cout << "Failed to read memory!" << std::endl;
+						makeError(std::format("[4] ReadProcessMemory failed: error code {}", memReadReq.errorCode));
+					}
+				}
+				else
+					makeError("[4] Request timed out");
 			}
+			else
+				makeError("[4] Request queue not initialized");
 		}
 		else
 			makeError(std::format("[4] Unexpected request size (expected 6, received {} bytes)", request.data.size()));
 		break;
 	case WRITE_MEMORY:
 	{
+		RequestTypes::MemoryWriteRequest memWriteReq{};
 		response.resize(5);
-		std::uint32_t startAddress = 0;
+		memWriteReq.address = 0;
 		for (int i = 0; i < 4; ++i)
-			startAddress |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
-		std::cout << "Writing " << request.data.size() - 4 << " bytes of memory starting at address " << std::hex << startAddress << std::dec << std::endl;
-		// No synchronization being performed here, hopefully that won't cause problems (words spoken before disaster)
-		if (WriteProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(startAddress), request.data.data() + 4, request.data.size() - 4, nullptr))
-			response[0] = WRITE_MEMORY;
+			memWriteReq.address |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
+		memWriteReq.bytes.insert(memWriteReq.bytes.begin(), request.data.begin() + 4, request.data.end());
+		std::cout << "Writing " << memWriteReq.bytes.size() << " bytes of memory starting at address " << std::hex << memWriteReq.address << std::dec << std::endl;
+
+		// Submit request and wait for it to be fulfilled
+		memWriteReq.fulfilled = false;
+		if (requestQueue != nullptr)
+		{
+			RequestQueue::Request req;
+			req.type = RequestQueue::Request::RequestType::MEMWRITE;
+			req.data = &memWriteReq;
+			requestQueue->push(std::move(req));
+
+			using namespace std::chrono_literals;
+			std::unique_lock<std::mutex> lock{memWriteReq.mutex};
+			if (memWriteReq.cv.wait_for(lock, 1s, [&memWriteReq]() -> bool { return memWriteReq.fulfilled; }))
+			{
+				if (memWriteReq.errorCode == 0)
+					response[0] = WRITE_MEMORY;
+				else
+					makeError(std::format("[5] WriteProcessMemory failed: error code {}", memWriteReq.errorCode));
+			}
+			else
+				makeError("[5] Request timed out");
+		}
 		else
-			makeError(std::format("[5] WriteProcessMemory failed: error code {}", GetLastError()));
+			makeError("[5] Request queue not initialized");
 		break;
 	}
 	case QUERY_GAME_STATE:
@@ -264,6 +325,7 @@ void Connection::prepareResponse()
 			break;
 		case 1: // Get current map (internal) name
 		{
+			// Unsynchronized memory access...let's hope it doesn't cause any problems
 			std::string_view mapName{csvanilla::gTMT[csvanilla::gStageNo].map};
 			for (int i = 0; i < 4; ++i)
 				response.push_back(static_cast<char>((mapName.size() >> (i * 8)) & 0xFF));

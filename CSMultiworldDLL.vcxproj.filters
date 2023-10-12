@@ -184,5 +184,8 @@
     <ClInclude Include="patches\uuid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="patches\RequestTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
