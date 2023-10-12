@@ -24,6 +24,7 @@ class ConsoleManager
 	HHOOK keyboardHook;
 	bool shouldExit;
 	bool isEnterPressed;
+	static void handleCommand(std::string command);
 public:
 	ConsoleManager();
 	~ConsoleManager();
@@ -77,28 +78,7 @@ void ConsoleManager::handleInputs()
 		if (!command.empty())
 		{
 			if (command[0] == '/')
-			{
-				std::istringstream iss(command);
-				std::string cmd;
-				iss >> cmd;
-				if (cmd == "/kill_server")
-				{
-					if (tcpServer != nullptr)
-					{
-						std::cout << "Sending server kill command" << std::endl;
-						tcpServer->forceStop();
-						std::cout << "Killed the server" << std::endl;
-					}
-					else
-						std::cout << "Server not initialized" << std::endl;
-				}
-				else if (cmd == "/get_flag")
-				{
-					int flagNum = 0;
-					iss >> flagNum;
-					std::cout << std::format("Flag {}: {}", flagNum, csvanilla::GetNPCFlag(flagNum)) << std::endl;
-				}
-			}
+				handleCommand(std::move(command));
 			else if (requestQueue != nullptr)
 			{
 				RequestQueue::Request request;
@@ -113,6 +93,54 @@ void ConsoleManager::handleInputs()
 
 		logger.useStdout(prevLoggerStdout);
 	}
+}
+
+void ConsoleManager::handleCommand(std::string command)
+{
+	std::istringstream iss(command);
+	std::string cmd;
+	iss >> cmd;
+	if (cmd == "/kill_server")
+	{
+		if (tcpServer != nullptr)
+		{
+			std::cout << "Sending server kill command" << std::endl;
+			tcpServer->forceStop();
+			std::cout << "Killed the server" << std::endl;
+		}
+		else
+			std::cout << "Server not initialized" << std::endl;
+	}
+	else if (cmd == "/get_flag")
+	{
+		int flagNum = 0;
+		iss >> flagNum;
+		std::cout << std::format("Flag {}: {}", flagNum, csvanilla::GetNPCFlag(flagNum)) << std::endl;
+	}
+	else if (cmd == "/log_level")
+	{
+		int newLogLevel = 0;
+		iss >> newLogLevel;
+		if (newLogLevel < 0)
+			newLogLevel = 0;
+		else if (newLogLevel > 4)
+			newLogLevel = 4;
+		logger.setLogLevel(static_cast<Logger::LogLevel>(newLogLevel));
+		std::cout << "Set log level to " << newLogLevel << std::endl;
+	}
+	else if (cmd == "/log_timestamps")
+	{
+		std::string newValueStr;
+		bool newValue;
+		newValue = !(iss >> newValueStr) || newValueStr == "1" || newValueStr == "true";
+		logger.showTimestamps(newValue);
+		if (newValue)
+			std::cout << "Enabled log timestamps" << std::endl;
+		else
+			std::cout << "Disabled log timestamps" << std::endl;
+	}
+	else
+		std::cout << "Unrecognized command" << std::endl;
 }
 
 LRESULT CALLBACK keyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam)

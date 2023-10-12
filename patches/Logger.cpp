@@ -1,5 +1,8 @@
 #include "Logger.h"
 #include <iostream>
+#include <string_view>
+#include <chrono>
+#include <format>
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
@@ -13,7 +16,7 @@ constexpr Logger::LogLevel DefaultLogLevel = Logger::LogLevel::Debug;
 
 Logger logger{DefaultLogLevel};
 
-Logger::Logger(LogLevel level) : isUsingStdout{DefaultStdout}, logLevel{level}
+Logger::Logger(LogLevel level) : logLevel{level}, isUsingStdout{DefaultStdout}, isShowingTimestamps{true}
 {}
 
 void Logger::log(LogLevel level, std::string message)
@@ -21,23 +24,30 @@ void Logger::log(LogLevel level, std::string message)
 	if (static_cast<int>(logLevel.load()) < static_cast<int>(level))
 		return;
 
+	std::string_view tag{};
 	switch (level)
 	{
 	case LogLevel::Error:
-		message = "[ERROR] " + message;
+		tag = "[ERROR]";
 		break;
 	case LogLevel::Warning:
-		message = "[WARNING] " + message;
+		tag = "[WARNING]";
 		break;
 	case LogLevel::Info:
-		message = "[INFO] " + message;
+		tag = "[INFO]";
 		break;
 	case LogLevel::Debug:
-		message = "[DEBUG] " + message;
+		tag = "[DEBUG]";
 		break;
 	}
 
+	std::string formatted;
+	if (isShowingTimestamps)
+		formatted = std::format("<{:%T}> {} {}", std::chrono::system_clock::now(), tag, message);
+	else
+		formatted = std::format("{} {}", tag, message);
+
 	if (isUsingStdout)
-		std::cout << message << std::endl;
-	OutputDebugStringA(message.c_str());
+		std::cout << formatted << std::endl;
+	OutputDebugStringA(formatted.c_str());
 }
