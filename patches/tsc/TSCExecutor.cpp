@@ -61,8 +61,18 @@ void TSCExecutor::runEvent(int eventNum)
 	jumpEvent(eventNum);
 }
 
+static bool isMS2Active()
+{
+	using csvanilla::gTS;
+	return gTS.mode != 0 && (gTS.flags & 0x21) == 0x21;
+}
+
 void TSCExecutor::tick()
 {
+	// Pause when <MS2/<MS3 is active to avoid drawing over it
+	if (activeTextbox && isMS2Active())
+		return;
+
 	switch (mode)
 	{
 	case OperationMode::IDLE:
@@ -141,7 +151,10 @@ void TSCExecutor::writeTextToSurface() const
 
 	for (unsigned i = 0; i < textLines.size(); ++i)
 		if (!textLines[i].empty())
-			csvanilla::PutText2(0, i * 16, textLines[i].c_str(), RGB(0xFF, 0xFF, 0xFE), TextSurfaceID);
+		{
+			csvanilla::PutText2(0, i * 14 + 1, textLines[i].c_str(), RGB(0x11, 0x00, 0x22), TextSurfaceID);
+			csvanilla::PutText2(0, i * 14, textLines[i].c_str(), RGB(0xFF, 0xFF, 0xFE), TextSurfaceID);
+		}
 }
 
 void TSCExecutor::jumpEvent(int eventNum)
@@ -187,11 +200,13 @@ void TSCExecutor::jumpEvent(int eventNum)
 
 void TSCExecutor::draw() const
 {
-	// Nothing to draw if not running or no textbox
-	if (mode == OperationMode::IDLE || !activeTextbox)
+	// Nothing to draw if not running, no textbox, or <MS2/<MS3 is active in the main parser
+	if (mode == OperationMode::IDLE || !activeTextbox || isMS2Active())
 		return;
 	// TODO adjust these rects...
-	const RECT TextRect = {70, 80, 268, 144};
+	constexpr int TextX = 76;
+	constexpr int TextY = 52;
+	const RECT TextRect = {TextX, TextY, TextX + 198, TextY + 64};
 	const RECT TextSurfaceRect = {0, 0, 216, 48};
 	// Draw text
 	csvanilla::PutBitmap3(&TextRect, TextRect.left, TextRect.top, &TextSurfaceRect, TextSurfaceID);
@@ -206,7 +221,7 @@ void TSCExecutor::draw() const
 			armsRect.right = armsRect.left + 16;
 			armsRect.bottom = armsRect.top + 16;
 			// Let's try drawing it here and see how that looks
-			csvanilla::PutBitmap3(&csvanilla::grcFull, 44, TextRect.top - 3, &armsRect, 12);
+			csvanilla::PutBitmap3(&csvanilla::grcFull, TextRect.left - 26, TextRect.top - 3, &armsRect, 12);
 		}
 		else
 		{
@@ -216,7 +231,7 @@ void TSCExecutor::draw() const
 			itemRect.top = (itemID / 8) * 16;
 			itemRect.right = itemRect.left + 32;
 			itemRect.bottom = itemRect.top + 16;
-			csvanilla::PutBitmap3(&csvanilla::grcFull, 38, TextRect.top - 3, &itemRect, 8);
+			csvanilla::PutBitmap3(&csvanilla::grcFull, TextRect.left - 32, TextRect.top - 3, &itemRect, 8);
 		}
 	}
 }
