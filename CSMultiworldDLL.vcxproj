@@ -111,6 +111,7 @@
   <ItemGroup>
     <ClCompile Include="dinputdll_proxy.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="patches\Logger.cpp" />
     <ClCompile Include="patches.cpp" />
     <ClCompile Include="patches\server\Connection.cpp" />
     <ClCompile Include="patches\console.cpp" />
@@ -159,6 +160,7 @@
     <ClInclude Include="doukutsu\valueview.h" />
     <ClInclude Include="doukutsu\weapons.h" />
     <ClInclude Include="doukutsu\window.h" />
+    <ClInclude Include="patches\Logger.h" />
     <ClInclude Include="patches\RequestTypes.h" />
     <ClInclude Include="patches\server\Connection.h" />
     <ClInclude Include="patches\server\ConnectionManager.h" />

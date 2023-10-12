@@ -2,7 +2,9 @@
 #include "RequestTypes.h"
 #include <utility>
 #include <stdexcept>
-#include <iostream>
+#include <sstream>
+#include <format>
+#include "Logger.h"
 #include "doukutsu/flags.h"
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -70,6 +72,13 @@ static void fulfill(RequestQueue::Request& request)
 			throw std::logic_error("Null request data");
 
 		{
+			std::ostringstream oss;
+			oss << "Acquiring lock to fulfill request for flags: ";
+			for (auto flag : req->flags)
+				oss << flag << ' ';
+			logger.logDebug(oss.str());
+		}
+		{
 			std::scoped_lock<std::mutex> lock{req->mutex};
 			auto getFlag = [](std::int32_t flagNum) -> bool { return (csvanilla::gFlagNPC[flagNum / 8] & (1 << (flagNum % 8))) != 0; };
 			req->result.reserve(req->flags.size());
@@ -78,6 +87,7 @@ static void fulfill(RequestQueue::Request& request)
 			req->fulfilled = true;
 		}
 		req->cv.notify_one();
+		logger.logDebug("Flag request fulfilled, server thread notified");
 		break;
 	}
 	case RT::MEMREAD:
@@ -86,7 +96,7 @@ static void fulfill(RequestQueue::Request& request)
 		if (req == nullptr)
 			throw std::logic_error("Null request data");
 
-		std::cout << "Fulfilling mem request at " << std::hex << req->address << std::dec << ", " << req->numBytes << " bytes" << std::endl;
+		logger.logDebug(std::format("Acquiring lock to fulfill mem request at {:#x}, {} bytes", req->address, req->numBytes));
 		{
 			std::scoped_lock<std::mutex> lock{req->mutex};
 			req->result.resize(req->numBytes);
@@ -97,6 +107,7 @@ static void fulfill(RequestQueue::Request& request)
 			req->fulfilled = true;
 		}
 		req->cv.notify_one();
+		logger.logDebug("Memory read request fulfilled, server notified");
 		break;
 	}
 	case RT::MEMWRITE:
@@ -105,7 +116,7 @@ static void fulfill(RequestQueue::Request& request)
 		if (req == nullptr)
 			throw std::logic_error("Null request data");
 
-		std::cout << "Fulfilling mem request at " << std::hex << req->address << std::dec << ", " << req->bytes.size() << " bytes" << std::endl;
+		logger.logDebug(std::format("Acquiring lock to fulfilling mem request at {:#x}, {} bytes", req->address, req->bytes.size()));
 		{
 			std::scoped_lock<std::mutex> lock{req->mutex};
 			if (WriteProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(req->address), req->bytes.data(), req->bytes.size(), nullptr))
@@ -115,6 +126,7 @@ static void fulfill(RequestQueue::Request& request)
 			req->fulfilled = true;
 		}
 		req->cv.notify_one();
+		logger.logDebug("Memory write request fulfilled, server notified");
 		break;
 	}
 	default:
@@ -139,6 +151,7 @@ void RequestQueue::fulfillAll()
 	}
 	if (!newTSCRequests.empty())
 	{
+		logger.logDebug(std::format("Request handler: Queued {} TSC events for execution", newTSCRequests.size()));
 		std::scoped_lock<std::mutex> lock{tscMutex};
 		for (Request& req : newTSCRequests)
 			pendingTSC.push(std::move(req));

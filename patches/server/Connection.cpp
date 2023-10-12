@@ -3,7 +3,7 @@
 #include <utility>
 #include <exception>
 #include <cstdint>
-#include <iostream>
+#include <sstream>
 #include <format>
 #include <string_view>
 #include <chrono>
@@ -15,6 +15,7 @@
 #include <asio/write.hpp>
 #include "../RequestQueue.h"
 #include "../RequestTypes.h"
+#include "../Logger.h"
 #include "../game_hooks.h"
 #include "../uuid.h"
 #include "doukutsu/flags.h"
@@ -32,13 +33,13 @@ Connection::Connection(tcp::socket sock, ConnectionManager& manager) :
 
 void Connection::start()
 {
-	std::cout << "Connection established, starting request handler" << std::endl;
+	logger.logInfo("Connection established, starting request handler");
 	asio::co_spawn(socket.get_executor(), [self = shared_from_this()]{return self->handleRequest();}, asio::detached);
 }
 
 void Connection::stop()
 {
-	std::cout << "Shutting down connection" << std::endl;
+	logger.logInfo("Shutting down connection");
 	socket.shutdown(tcp::socket::shutdown_both);
 	socket.close();
 }
@@ -120,13 +121,14 @@ void Connection::prepareResponse()
 {
 	enum RequestType: unsigned char {HANDSHAKE, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, READ_MEMORY, WRITE_MEMORY, QUERY_GAME_STATE, DISCONNECT = 255};
 
-	std::cout << "Received request: type = " << static_cast<int>(request.header[0]) << ", size = " << request.data.size() << std::endl;
-	/*
-	std::cout << "Raw request data: " << std::hex;
-	for (auto byte : request.data)
-		std::cout << static_cast<unsigned>(static_cast<unsigned char>(byte)) << ' ';
-	std::cout << std::dec << std::endl;
-	*/
+	{
+		logger.logInfo(std::format("Received request: type = {}, size = {}", static_cast<int>(request.header[0]), request.data.size()));
+		std::ostringstream oss;
+		oss << "Raw request data: " << std::hex;
+		for (auto byte : request.data)
+			oss << static_cast<unsigned>(static_cast<unsigned char>(byte)) << ' ';
+		logger.logDebug(oss.str());
+	}
 
 	auto makeError = [this](std::string_view message) {
 		response.clear();
@@ -134,6 +136,7 @@ void Connection::prepareResponse()
 		for (int i = 0; i < 4; ++i)
 			response.push_back(static_cast<char>((message.size() >> (i * 8)) & 0xFF));
 		response.insert(response.end(), message.begin(), message.end());
+		logger.logError(std::string{message});
 	};
 	response.clear();
 	switch (request.header[0])
@@ -154,7 +157,7 @@ void Connection::prepareResponse()
 			event.type = RequestQueue::Request::RequestType::SCRIPT;
 			event.data = std::string(request.data.begin(), request.data.end());
 			
-			std::cout << "Queueing execution of script: " << std::any_cast<std::string>(event.data) << std::endl;
+			logger.logInfo("Queueing execution of script: " + std::any_cast<std::string>(event.data));
 			requestQueue->push(std::move(event));
 			
 			response.push_back(EXEC_SCRIPT);
@@ -163,7 +166,6 @@ void Connection::prepareResponse()
 		else
 		{
 			// Request queue not available? That's not good...
-			std::cout << "Failed to queue script execution: event queue not initialized" << std::endl;
 			makeError("[1] Event queue not initialized"); // Send back error status
 		}
 		break;
@@ -171,10 +173,13 @@ void Connection::prepareResponse()
 	{
 		RequestTypes::FlagRequest flagRequest{};
 		flagRequest.flags = parseNumberList(request.data);
-		std::cout << "Received request for flags: ";
-		for (std::int32_t flag : flagRequest.flags)
-			std::cout << flag << ' ';
-		std::cout << std::endl;
+		{
+			std::ostringstream oss;
+			oss << "Received request for flags: ";
+			for (std::int32_t flag : flagRequest.flags)
+				oss << flag << ' ';
+			logger.logInfo(oss.str());
+		}
 
 		response.reserve(flagRequest.flags.size() + 5);
 		response.push_back(GET_FLAGS);
@@ -207,10 +212,13 @@ void Connection::prepareResponse()
 		if (requestQueue != nullptr)
 		{
 			std::vector<std::int32_t> eventList = parseNumberList(request.data);
-			std::cout << "Queueing execution of events: ";
-			for (std::int32_t event : eventList)
-				std::cout << event << ' ';
-			std::cout << std::endl;
+			{
+				std::ostringstream oss;
+				oss << "Queueing execution of events: ";
+				for (std::int32_t event : eventList)
+					oss << event << ' ';
+				logger.logInfo(oss.str());
+			}
 
 			std::vector<RequestQueue::Request> eventRequests;
 			eventRequests.reserve(eventList.size());
@@ -229,7 +237,6 @@ void Connection::prepareResponse()
 		else
 		{
 			// Request queue not available? That's not good...
-			std::cout << "Failed to queue script execution: event queue not initialized" << std::endl;
 			makeError("[3] Event queue not initialized"); // Send back error status
 		}
 		break;
@@ -241,7 +248,7 @@ void Connection::prepareResponse()
 			for (int i = 0; i < 4; ++i)
 				memReadReq.address |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
 			memReadReq.numBytes = static_cast<unsigned char>(request.data[4]) | (static_cast<unsigned char>(request.data[5]) << 8);
-			std::cout << "Reading " << memReadReq.numBytes << " bytes of memory starting at address " << std::hex << memReadReq.address << std::dec << std::endl;
+			logger.logInfo(std::format("Received request for {} bytes of memory starting at address {:#x}", memReadReq.numBytes, memReadReq.address));
 			response.push_back(READ_MEMORY);
 			response.push_back(request.data[4]);
 			response.push_back(request.data[5]);
@@ -263,10 +270,7 @@ void Connection::prepareResponse()
 					if (memReadReq.errorCode == 0)
 						response.insert(response.end(), memReadReq.result.begin(), memReadReq.result.end());
 					else
-					{
-						std::cout << "Failed to read memory!" << std::endl;
 						makeError(std::format("[4] ReadProcessMemory failed: error code {}", memReadReq.errorCode));
-					}
 				}
 				else
 					makeError("[4] Request timed out");
@@ -285,7 +289,7 @@ void Connection::prepareResponse()
 		for (int i = 0; i < 4; ++i)
 			memWriteReq.address |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
 		memWriteReq.bytes.insert(memWriteReq.bytes.begin(), request.data.begin() + 4, request.data.end());
-		std::cout << "Writing " << memWriteReq.bytes.size() << " bytes of memory starting at address " << std::hex << memWriteReq.address << std::dec << std::endl;
+		logger.logInfo(std::format("Received request for writing {} bytes of memory starting at address {:#x}", memWriteReq.bytes.size(), memWriteReq.address));
 
 		// Submit request and wait for it to be fulfilled
 		memWriteReq.fulfilled = false;
@@ -339,15 +343,18 @@ void Connection::prepareResponse()
 		break;
 	}
 	case DISCONNECT:
-		std::cout << "Received disconnect signal; ending connection" << std::endl;
+		logger.logInfo("Received disconnect signal; ending connection");
 		connectionManager.stop(shared_from_this());
 		break;
 	default: // Unknown request! Uh-oh
-		std::cout << "Received unknown request! Request data: " << std::hex;
-		for (auto byte : request.data)
-			std::cout << static_cast<int>(byte) << ' ';
-		std::cout << std::dec << std::endl;
-
 		makeError(std::format("[{}] Unknown request type", static_cast<int>(request.header[0])));
+
+		{
+			std::ostringstream oss;
+			oss << "Request data: " << std::hex;
+			for (auto byte : request.data)
+				oss << static_cast<int>(byte) << ' ';
+			logger.logWarning(oss.str());
+		}
 	}
 }

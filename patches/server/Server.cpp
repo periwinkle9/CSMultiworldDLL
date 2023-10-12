@@ -4,11 +4,12 @@
 #include <functional>
 #include <set>
 #include <memory>
-#include <iostream>
+#include <format>
 #include <asio/co_spawn.hpp>
 #include <asio/detached.hpp>
 #include <asio/post.hpp>
 #include <asio/use_awaitable.hpp>
+#include "../Logger.h"
 
 using asio::awaitable;
 using asio::ip::tcp;
@@ -24,7 +25,7 @@ awaitable<void> listener(tcp::acceptor& acceptor, ConnectionManager& connectionM
 {
 	while (acceptor.is_open())
 	{
-		std::cout << "Awaiting connection" << std::endl;
+		logger.logDebug("Awaiting connection");
 		connectionManager.start(std::make_shared<Connection>(co_await acceptor.async_accept(asio::use_awaitable), connectionManager));
 	}
 }
@@ -47,7 +48,7 @@ void Server::start(unsigned short port)
 		acceptor.bind(endpoint);
 		acceptor.listen();
 		asio::co_spawn(io_context, listener(acceptor, activeConnections), asio::detached);
-		std::cout << "Starting server on port " << port << std::endl;
+		logger.logInfo(std::format("Starting server on port {}", port));
 		io_context.run();
 	});
 	isRunning = true;
@@ -57,6 +58,7 @@ void Server::stop()
 {
 	if (isRunning)
 	{
+		logger.logInfo("Server stopping");
 		// Post connection stop request
 		asio::post(io_context, [this]() {
 			acceptor.close();
@@ -72,6 +74,7 @@ void Server::forceStop()
 {
 	if (isRunning)
 	{
+		logger.logWarning("Force-stopping server");
 		io_context.stop(); // Kill the event loop; io_context.run() should return soon after this
 		serverThread.join();
 		isRunning = false;

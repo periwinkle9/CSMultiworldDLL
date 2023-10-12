@@ -1,6 +1,8 @@
 #include "console.h"
 #include <iostream>
+#include <sstream>
 #include <string>
+#include <format>
 #include <thread>
 #include <mutex>
 #include <functional>
@@ -10,7 +12,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include "RequestQueue.h"
+#include "Logger.h"
 #include "server/Server.h"
+#include "doukutsu/flags.h"
 
 class ConsoleManager
 {
@@ -52,6 +56,7 @@ void ConsoleManager::handleInputs()
 
 		// Handle input
 		isEnterPressed = false;
+		bool prevLoggerStdout = logger.useStdout(false);
 
 		std::cout << "Enter command: ";
 		std::string command;
@@ -69,27 +74,44 @@ void ConsoleManager::handleInputs()
 			else
 				break;
 		}
-		if (command == "kill_server")
+		if (!command.empty())
 		{
-			if (tcpServer != nullptr)
+			if (command[0] == '/')
 			{
-				std::cout << "Sending server kill command" << std::endl;
-				tcpServer->forceStop();
-				std::cout << "Killed the server" << std::endl;
+				std::istringstream iss(command);
+				std::string cmd;
+				iss >> cmd;
+				if (cmd == "/kill_server")
+				{
+					if (tcpServer != nullptr)
+					{
+						std::cout << "Sending server kill command" << std::endl;
+						tcpServer->forceStop();
+						std::cout << "Killed the server" << std::endl;
+					}
+					else
+						std::cout << "Server not initialized" << std::endl;
+				}
+				else if (cmd == "/get_flag")
+				{
+					int flagNum = 0;
+					iss >> flagNum;
+					std::cout << std::format("Flag {}: {}", flagNum, csvanilla::GetNPCFlag(flagNum)) << std::endl;
+				}
+			}
+			else if (requestQueue != nullptr)
+			{
+				RequestQueue::Request request;
+				request.type = RequestQueue::Request::RequestType::SCRIPT;
+				request.data = std::move(command);
+				requestQueue->push(std::move(request));
+				std::cout << "Command sent." << std::endl;
 			}
 			else
-				std::cout << "Server not initialized" << std::endl;
+				std::cout << "Command receiver not initialized" << std::endl;
 		}
-		else if (requestQueue != nullptr)
-		{
-			RequestQueue::Request request;
-			request.type = RequestQueue::Request::RequestType::SCRIPT;
-			request.data = std::move(command);
-			requestQueue->push(std::move(request));
-			std::cout << "Command sent." << std::endl;
-		}
-		else
-			std::cout << "Command receiver not initialized" << std::endl;
+
+		logger.useStdout(prevLoggerStdout);
 	}
 }
 
@@ -113,7 +135,10 @@ ConsoleManager::ConsoleManager() : inputThread{}, mutex{}, cv{}, keyboardHook{nu
 		// Install keyboard hook
 		keyboardHook = SetWindowsHookExA(WH_KEYBOARD, keyboardHookProc, nullptr, GetCurrentThreadId());
 		if (keyboardHook == nullptr)
+		{
 			std::cerr << "Failed to set keyboard hook! You will be unable to send commands from this console." << std::endl;
+			logger.logWarning("Failed to set keyboard hook for debug console");
+		}
 
 		inputThread = std::thread(std::bind(&ConsoleManager::handleInputs, this));
 	}

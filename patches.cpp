@@ -22,12 +22,12 @@ void applyPatches()
 void applyPostInitPatches()
 {
 	loadUUID();
+	initRequestQueue();
+	initTSC2();
 #ifdef NDEBUG
 	if (csvanilla::IsKeyFile("debug"))
 #endif
 		initConsole();
-	initTSC2();
-	initRequestQueue();
 	tcpServer = new Server(5451);
 }
 
