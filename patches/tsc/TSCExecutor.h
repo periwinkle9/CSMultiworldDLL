@@ -32,6 +32,8 @@ public:
 	void runScript(std::string script);
 	void runEvent(int eventNum);
 
+	void endEvent();
+
 	void tick();
 	void draw() const;
 

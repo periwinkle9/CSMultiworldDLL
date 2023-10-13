@@ -61,6 +61,12 @@ void TSCExecutor::runEvent(int eventNum)
 	jumpEvent(eventNum);
 }
 
+void TSCExecutor::endEvent()
+{
+	resetState();
+	mode = OperationMode::IDLE;
+}
+
 static bool isMS2Active()
 {
 	using csvanilla::gTS;

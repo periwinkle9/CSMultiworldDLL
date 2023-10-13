@@ -83,17 +83,21 @@ BOOL LoadProfile(const char* name)
 			"A new game will be started instead.", "UUID Mismatch", MB_ICONEXCLAMATION | MB_OK);
 		return FALSE;
 	}
-	// Clear TSC script queue on game reset
+	// Clear TSC script queue and stop running events on game reset
 	if (requestQueue != nullptr)
 		requestQueue->clearTSCQueue();
+	if (secondaryTSCParser != nullptr)
+		secondaryTSCParser->endEvent();
 	return TRUE;
 }
 
 BOOL InitializeGame(void* hWnd)
 {
-	// Clear TSC script queue on new game
+	// Clear TSC script queue and stop running events  on new game
 	if (requestQueue != nullptr)
 		requestQueue->clearTSCQueue();
+	if (secondaryTSCParser != nullptr)
+		secondaryTSCParser->endEvent();
 	return csvanilla::InitializeGame(hWnd);
 }
 
