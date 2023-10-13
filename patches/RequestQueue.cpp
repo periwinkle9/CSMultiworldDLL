@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <format>
+#include <memory>
 #include "Logger.h"
 #include "doukutsu/flags.h"
 #define WIN32_LEAN_AND_MEAN
@@ -68,7 +69,7 @@ static void fulfill(RequestQueue::Request& request)
 	{
 	case RT::FLAGS:
 	{
-		FlagRequest* req = std::any_cast<FlagRequest*>(request.data);
+		std::shared_ptr<FlagRequest> req = std::any_cast<std::shared_ptr<FlagRequest>>(request.data);
 		if (req == nullptr)
 			throw std::logic_error("Null request data");
 
@@ -93,7 +94,7 @@ static void fulfill(RequestQueue::Request& request)
 	}
 	case RT::MEMREAD:
 	{
-		MemoryReadRequest* req = std::any_cast<MemoryReadRequest*>(request.data);
+		std::shared_ptr<MemoryReadRequest> req = std::any_cast<std::shared_ptr<MemoryReadRequest>>(request.data);
 		if (req == nullptr)
 			throw std::logic_error("Null request data");
 
@@ -113,7 +114,7 @@ static void fulfill(RequestQueue::Request& request)
 	}
 	case RT::MEMWRITE:
 	{
-		MemoryWriteRequest* req = std::any_cast<MemoryWriteRequest*>(request.data);
+		std::shared_ptr<MemoryWriteRequest> req = std::any_cast<std::shared_ptr<MemoryWriteRequest>>(request.data);
 		if (req == nullptr)
 			throw std::logic_error("Null request data");
 

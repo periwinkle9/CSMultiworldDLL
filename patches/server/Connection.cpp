@@ -7,6 +7,7 @@
 #include <format>
 #include <string_view>
 #include <chrono>
+#include <memory>
 #include <asio/buffer.hpp>
 #include <asio/co_spawn.hpp>
 #include <asio/detached.hpp>
@@ -171,35 +172,35 @@ void Connection::prepareResponse()
 		break;
 	case GET_FLAGS:
 	{
-		RequestTypes::FlagRequest flagRequest{};
-		flagRequest.flags = parseNumberList(request.data);
+		std::shared_ptr<RequestTypes::FlagRequest> flagRequest{new RequestTypes::FlagRequest};
+		flagRequest->flags = parseNumberList(request.data);
 		{
 			std::ostringstream oss;
 			oss << "Received request for flags: ";
-			for (std::int32_t flag : flagRequest.flags)
+			for (std::int32_t flag : flagRequest->flags)
 				oss << flag << ' ';
 			logger.logInfo(oss.str());
 		}
 
-		response.reserve(flagRequest.flags.size() + 5);
+		response.reserve(flagRequest->flags.size() + 5);
 		response.push_back(GET_FLAGS);
 		// Write response length
 		for (int i = 0; i < 4; ++i)
-			response.push_back(static_cast<char>((flagRequest.flags.size() >> (i * 8)) & 0xFF));
+			response.push_back(static_cast<char>((flagRequest->flags.size() >> (i * 8)) & 0xFF));
 
 		// Submit request and wait for it to be fulfilled
-		flagRequest.fulfilled = false;
+		flagRequest->fulfilled = false;
 		if (requestQueue != nullptr)
 		{
 			RequestQueue::Request req;
 			req.type = RequestQueue::Request::RequestType::FLAGS;
-			req.data = &flagRequest;
+			req.data = flagRequest;
 			requestQueue->push(std::move(req));
 
 			using namespace std::chrono_literals;
-			std::unique_lock<std::mutex> lock{flagRequest.mutex};
-			if (flagRequest.cv.wait_for(lock, 1s, [&flagRequest]() -> bool { return flagRequest.fulfilled; }))
-				response.insert(response.end(), flagRequest.result.begin(), flagRequest.result.end());
+			std::unique_lock<std::mutex> lock{flagRequest->mutex};
+			if (flagRequest->cv.wait_for(lock, 1s, [&flagRequest]() -> bool { return flagRequest->fulfilled; }))
+				response.insert(response.end(), flagRequest->result.begin(), flagRequest->result.end());
 			else
 				makeError("[2] Request timed out");
 		}
@@ -243,34 +244,34 @@ void Connection::prepareResponse()
 	case READ_MEMORY:
 		if (request.data.size() == 6)
 		{
-			RequestTypes::MemoryReadRequest memReadReq{};
-			memReadReq.address = 0;
+			std::shared_ptr<RequestTypes::MemoryReadRequest> memReadReq{new RequestTypes::MemoryReadRequest};
+			memReadReq->address = 0;
 			for (int i = 0; i < 4; ++i)
-				memReadReq.address |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
-			memReadReq.numBytes = static_cast<unsigned char>(request.data[4]) | (static_cast<unsigned char>(request.data[5]) << 8);
-			logger.logInfo(std::format("Received request for {} bytes of memory starting at address {:#x}", memReadReq.numBytes, memReadReq.address));
+				memReadReq->address |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
+			memReadReq->numBytes = static_cast<unsigned char>(request.data[4]) | (static_cast<unsigned char>(request.data[5]) << 8);
+			logger.logInfo(std::format("Received request for {} bytes of memory starting at address {:#x}", memReadReq->numBytes, memReadReq->address));
 			response.push_back(READ_MEMORY);
 			response.push_back(request.data[4]);
 			response.push_back(request.data[5]);
 			response.resize(5);
 
 			// Submit request and wait for it to be fulfilled
-			memReadReq.fulfilled = false;
+			memReadReq->fulfilled = false;
 			if (requestQueue != nullptr)
 			{
 				RequestQueue::Request req;
 				req.type = RequestQueue::Request::RequestType::MEMREAD;
-				req.data = &memReadReq;
+				req.data = memReadReq;
 				requestQueue->push(std::move(req));
 
 				using namespace std::chrono_literals;
-				std::unique_lock<std::mutex> lock{memReadReq.mutex};
-				if (memReadReq.cv.wait_for(lock, 1s, [&memReadReq]() -> bool { return memReadReq.fulfilled; }))
+				std::unique_lock<std::mutex> lock{memReadReq->mutex};
+				if (memReadReq->cv.wait_for(lock, 1s, [&memReadReq]() -> bool { return memReadReq->fulfilled; }))
 				{
-					if (memReadReq.errorCode == 0)
-						response.insert(response.end(), memReadReq.result.begin(), memReadReq.result.end());
+					if (memReadReq->errorCode == 0)
+						response.insert(response.end(), memReadReq->result.begin(), memReadReq->result.end());
 					else
-						makeError(std::format("[4] ReadProcessMemory failed: error code {}", memReadReq.errorCode));
+						makeError(std::format("[4] ReadProcessMemory failed: error code {}", memReadReq->errorCode));
 				}
 				else
 					makeError("[4] Request timed out");
@@ -283,31 +284,31 @@ void Connection::prepareResponse()
 		break;
 	case WRITE_MEMORY:
 	{
-		RequestTypes::MemoryWriteRequest memWriteReq{};
+		std::shared_ptr<RequestTypes::MemoryWriteRequest> memWriteReq{new RequestTypes::MemoryWriteRequest};
 		response.resize(5);
-		memWriteReq.address = 0;
+		memWriteReq->address = 0;
 		for (int i = 0; i < 4; ++i)
-			memWriteReq.address |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
-		memWriteReq.bytes.insert(memWriteReq.bytes.begin(), request.data.begin() + 4, request.data.end());
-		logger.logInfo(std::format("Received request for writing {} bytes of memory starting at address {:#x}", memWriteReq.bytes.size(), memWriteReq.address));
+			memWriteReq->address |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
+		memWriteReq->bytes.insert(memWriteReq->bytes.begin(), request.data.begin() + 4, request.data.end());
+		logger.logInfo(std::format("Received request for writing {} bytes of memory starting at address {:#x}", memWriteReq->bytes.size(), memWriteReq->address));
 
 		// Submit request and wait for it to be fulfilled
-		memWriteReq.fulfilled = false;
+		memWriteReq->fulfilled = false;
 		if (requestQueue != nullptr)
 		{
 			RequestQueue::Request req;
 			req.type = RequestQueue::Request::RequestType::MEMWRITE;
-			req.data = &memWriteReq;
+			req.data = memWriteReq;
 			requestQueue->push(std::move(req));
 
 			using namespace std::chrono_literals;
-			std::unique_lock<std::mutex> lock{memWriteReq.mutex};
-			if (memWriteReq.cv.wait_for(lock, 1s, [&memWriteReq]() -> bool { return memWriteReq.fulfilled; }))
+			std::unique_lock<std::mutex> lock{memWriteReq->mutex};
+			if (memWriteReq->cv.wait_for(lock, 1s, [&memWriteReq]() -> bool { return memWriteReq->fulfilled; }))
 			{
-				if (memWriteReq.errorCode == 0)
+				if (memWriteReq->errorCode == 0)
 					response[0] = WRITE_MEMORY;
 				else
-					makeError(std::format("[5] WriteProcessMemory failed: error code {}", memWriteReq.errorCode));
+					makeError(std::format("[5] WriteProcessMemory failed: error code {}", memWriteReq->errorCode));
 			}
 			else
 				makeError("[5] Request timed out");
