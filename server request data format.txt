@@ -61,14 +61,14 @@ Type 6 - Query game state
    if request type == 0 or blank:
      header (6, 1) + 1 byte denoting the current game execution state:
      0: intro cutscene (ModeOpening())
-     //1: title screen (ModeTitle()) (disabled, not working)
+     1: title screen (ModeTitle())
      2: main game loop (ModeAction())
      3: inventory screen (CampLoop())
      4: teleporter menu (StageSelectLoop())
      5: minimap display (MiniMapLoop())
      6: island falling cutscene (Scene_DownIsland())
      7: Esc menu (Call_Escape())
-    -1: none of the above (game initializing/de-initializing or title screen ;) )
+    -1: none of the above (game initializing/de-initializing)
    if request type == 1:
      header (6, m) + m byte string containing the current (internal) map name
 
