@@ -165,6 +165,8 @@ void TSCExecutor::writeTextToSurface() const
 
 void TSCExecutor::jumpEvent(int eventNum)
 {
+	// Apparently <EVE clears the textbox
+	clearText();
 	wait = 0; // I don't know if resetting this is necessary, but let's do it anyways just to be safe
 	// Look for event in vanilla script
 	const int TSC_BUFFER_SIZE = 0x5000;

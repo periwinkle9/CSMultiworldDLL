@@ -239,6 +239,7 @@ auto TSCExecutor::processCommand() -> CommandStatus
 	case TSCcmd<'M','S','G'>::value:
 	case TSCcmd<'M','S','2'>::value:
 	case TSCcmd<'M','S','3'>::value:
+		clearText();
 		activeTextbox = true;
 		currentPos += 4;
 		keepProcessing = false;
