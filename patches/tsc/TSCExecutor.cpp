@@ -4,8 +4,10 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <format>
 #include <algorithm>
 #include <utility>
+#include "../Logger.h"
 #include "doukutsu/draw.h"
 #include "doukutsu/fade.h"
 #include "doukutsu/player.h"
@@ -51,6 +53,7 @@ void TSCExecutor::runScript(std::string script)
 	currentScript = scriptBuffer;
 	currentPos = std::begin(currentScript);
 	mode = OperationMode::RUNNING;
+	logger.logDebug("Now executing script: " + scriptBuffer);
 }
 
 void TSCExecutor::runEvent(int eventNum)
@@ -63,6 +66,8 @@ void TSCExecutor::runEvent(int eventNum)
 
 void TSCExecutor::endEvent()
 {
+	if (mode != OperationMode::IDLE)
+		logger.logInfo("Stopping parallel TSC parser");
 	resetState();
 	mode = OperationMode::IDLE;
 }
@@ -136,7 +141,13 @@ void TSCExecutor::processText()
 	std::string newText{currentPos, textEndPos};
 	std::replace(std::begin(newText), std::end(newText), '=', '\x95'); // Replace all '=' with bullet point
 	if (currentLine < textLines.size())
+	{
 		textLines[currentLine] += newText;
+		if (textLines[currentLine].size() > 39) // Empirically-observed max text line length without cutting off
+			logger.logWarning("Text line too long; it will be cut off");
+	}
+	else
+		logger.logWarning(std::format("Too many text lines (current line = {}), ignoring all text past the 3rd line", currentLine));
 	currentPos = textEndPos;
 	updateText = true;
 }
@@ -199,9 +210,13 @@ void TSCExecutor::jumpEvent(int eventNum)
 		currentScript = std::string_view{eventStart, nextEvent};
 		currentPos = std::begin(currentScript);
 		mode = OperationMode::RUNNING;
+		logger.logDebug(std::format("Now executing event {}", eventNum));
 	}
 	else
+	{
 		mode = OperationMode::IDLE;
+		logger.logWarning(std::format("Event {} not found, stopping parallel TSC parser", eventNum));
+	}
 }
 
 void TSCExecutor::draw() const
