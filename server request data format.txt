@@ -1,7 +1,6 @@
-This is all WIP and subject to change based on whatever makes the RDV connector
-easier to implement. (I'll keep this document updated throughout, of course.)
-
-Data format:
+This document describes the format of the data that the server expects to receive.
+All requests to the server must start with a 5-byte header, followed by the request data.
+Replies from the server will follow the same format, as described below:
 
 Header (t, n):
 t (1 byte) - request type
@@ -15,23 +14,29 @@ Type 0 - Get server info
     {
     	"api_version": 0,
     	"platform": "freeware",
-    	"uuid": "{00000000-0000-0000-0000-000000000000}",
+    	"uuid": "{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}",
     	"offsets": {
     		"flags": 4840864,
-    		"map_flags": 4842936
+    		"map_flags": 4842936,
+    		"arms_data": 4824008,
+    		"current_hp": 4843212,
+    		"max_hp": 4843216
     	}
-    }   
+    }
 
 Type 1 - Execute a script
-  data: n-byte script to be executed
+  data: n-byte script to be queued for execution in the parallel TSC processor
   server response:
-    if script was queued for execution successfully, header (1, 0) + no data
-    if something went wrong, header (-1, m) + m byte string describing the error
+    on success, header (1, 0) + no data. Note that a successful response does not mean
+                that the script executed successfully, only that it has been queued.
+    on failure, header (-1, m) + m byte string describing the error
 
 Type 2 - Get flag state
   data: array of n/4 signed 4-byte flag numbers, little-endian
-  server response: header (2, n/4) + array of 1-byte 0/1 values corresponding to the
-                   state of the requested flags
+  server response:
+    on success, header (2, n/4) + array of 1-byte 0/1 values corresponding to the
+                state of the requested flags
+    on failure, header (-1, m) + m byte string describing the error
 
 Type 3 - Queue multiple event numbers
   data: array of n/4 signed 4-byte event numbers, little-endian
@@ -73,9 +78,7 @@ Type 6 - Query game state
      header (6, m) + m byte string containing the current (internal) map name
 
 Type -1 (255) - Disconnect
- The client can just close the connection itself, so you probably don't actually
- need this. But if you want the server to close the connection instead then
- here you go, I guess...(this command only closes the current connection, not the
- entire server)
+ Closes the current connection. The server can detect if the client closed the connection
+ from their end, so sending this before disconnecting is probably not necessary.
   data: none
   server response: none (connection will be closed)
