@@ -18,7 +18,8 @@ In addition to executing arbitrary TSC, the debug console also supports the foll
 commands:
 * `/get_flag n` retrieves the value of flag `n` (note, `n` must be an integer, so
 OOB TSC values must be converted into their integer value)
-* `/log_level n` sets the current log level to `n`. Log message with a level greater
+* `/log_level [n]` sets the current log level to `n` (if provided), or retrieves the
+current log level if called with no argument. Log message with a level greater
 than the current log level will no longer be displayed. (Valid log levels are 0-4,
 inclusive.)
 * `/log_timestamps <0|1>` disables or enables timestamp logging. (Timestamps are shown

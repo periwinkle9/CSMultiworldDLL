@@ -120,13 +120,17 @@ void ConsoleManager::handleCommand(std::string command)
 	else if (cmd == "/log_level")
 	{
 		int newLogLevel = 0;
-		iss >> newLogLevel;
-		if (newLogLevel < 0)
-			newLogLevel = 0;
-		else if (newLogLevel > 4)
-			newLogLevel = 4;
-		logger.setLogLevel(static_cast<Logger::LogLevel>(newLogLevel));
-		std::cout << "Set log level to " << newLogLevel << std::endl;
+		if (iss >> newLogLevel)
+		{
+			if (newLogLevel < 0)
+				newLogLevel = 0;
+			else if (newLogLevel > 4)
+				newLogLevel = 4;
+			logger.setLogLevel(static_cast<Logger::LogLevel>(newLogLevel));
+			std::cout << "Set log level to " << newLogLevel << std::endl;
+		}
+		else
+			std::cout << "Current log level is " << static_cast<int>(logger.getLogLevel()) << std::endl;
 	}
 	else if (cmd == "/log_timestamps")
 	{
@@ -159,6 +163,9 @@ ConsoleManager::ConsoleManager() : inputThread{}, mutex{}, cv{}, keyboardHook{nu
 		freopen_s(&dummy, "CONOUT$", "w", stdout);
 		freopen_s(&dummy, "CONOUT$", "w", stderr);
 		freopen_s(&dummy, "CONIN$", "r", stdin);
+
+		// Set logger to log to console
+		logger.useStdout(true);
 
 		// Install keyboard hook
 		keyboardHook = SetWindowsHookExA(WH_KEYBOARD, keyboardHookProc, nullptr, GetCurrentThreadId());

@@ -33,13 +33,13 @@ Connection::Connection(tcp::socket sock, ConnectionManager& manager) :
 
 void Connection::start()
 {
-	logger.logInfo("Connection established, starting request handler");
+	logger.logDebug("Connection established, starting request handler");
 	asio::co_spawn(socket.get_executor(), [self = shared_from_this()]{return self->handleRequest();}, asio::detached);
 }
 
 void Connection::stop()
 {
-	logger.logInfo("Shutting down connection");
+	logger.logDebug("Shutting down connection");
 	socket.shutdown(tcp::socket::shutdown_both);
 	socket.close();
 }

@@ -23,6 +23,7 @@ public:
 	void logInfo(std::string message) { log(LogLevel::Info, std::move(message)); }
 	void logDebug(std::string message) { log(LogLevel::Debug, std::move(message)); }
 	void setLogLevel(LogLevel level) { logLevel = level; }
+	LogLevel getLogLevel() const { return logLevel.load(); }
 };
 
 extern Logger logger;
