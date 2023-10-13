@@ -140,15 +140,28 @@ std::atomic<GameMode> currentGameMode = GameMode::INIT;
 	return ret; \
 }
 
+#define MAKE_GAME_FUNC(name, mode) int name(void* hWnd) \
+{ \
+	currentGameMode = mode; \
+	return csvanilla::name(hWnd); \
+}
+
 namespace
 {
 MAKE_FUNC(ModeOpening, (void* hWnd), GameMode::OPENING, hWnd)
 
 // These functions contain hacks that use ESI without preserving its value
 #pragma runtime_checks("s", off)
-MAKE_FUNC(ModeTitle, (void* hWnd), GameMode::TITLE, hWnd)
-MAKE_FUNC(ModeAction, (void* hWnd), GameMode::ACTION, hWnd)
+MAKE_GAME_FUNC(ModeTitle, GameMode::TITLE)
+MAKE_GAME_FUNC(ModeAction, GameMode::ACTION)
 #pragma runtime_checks("s", restore)
+
+// Replaces the EndMapData() call when exiting
+void DeinitHook()
+{
+	currentGameMode = GameMode::INIT;
+	return csvanilla::EndMapData();
+}
 
 MAKE_FUNC(CampLoop, (), GameMode::INVENTORY)
 MAKE_FUNC(StageSelectLoop, (int* event), GameMode::TELEPORTER, event)
@@ -163,6 +176,7 @@ void hookGameLoops()
 	writeCall(0x40F6A7, ModeOpening);
 	writeCall(0x40F6BC, ModeTitle);
 	writeCall(0x40F6D1, ModeAction);
+	writeCall(0x40F6EA, DeinitHook);
 	writeCall(0x410725, CampLoop);
 	writeCall(0x4244CE, StageSelectLoop);
 	writeCall(0x410785, MiniMapLoop);
