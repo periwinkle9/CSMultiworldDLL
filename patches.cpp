@@ -13,7 +13,6 @@ void applyPatches()
 	patcher::setupPostInitHook();
 	patcher::setupCleanupHook();
 	applyGameHooks();
-	patchUUIDChecks();
 }
 
 /* If patcher::setupPostInitHook() is called above, then this function will be called

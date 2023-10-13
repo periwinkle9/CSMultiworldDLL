@@ -52,6 +52,7 @@ bool RequestQueue::tryPopTSC(Request& poppedRequest)
 
 void RequestQueue::clearTSCQueue()
 {
+	logger.logDebug("Clearing TSC event queue");
 	std::unique_lock<std::mutex> lock{tscMutex};
 	// Heh, std::queue doesn't have a .clear() member function, so let's just swap it out for an empty container
 	using std::swap;

@@ -2,9 +2,11 @@
 #include "patch_utils.h"
 #include "tsc/TSCExecutor.h"
 #include "RequestQueue.h"
+#include "uuid.h"
 #include "doukutsu/inventory.h"
 #include "doukutsu/map.h"
 #include "doukutsu/misc.h"
+#include "doukutsu/profile.h"
 #include "doukutsu/teleporter.h"
 #include "doukutsu/tsc.h"
 #include "doukutsu/window.h"
@@ -60,13 +62,54 @@ int SystemTaskWrapper()
 	return csvanilla::SystemTask();
 }
 
+void* ProfileUUID = &csvanilla::gMapping[sizeof csvanilla::gMapping - sizeof uuid]; // Use the last 16 bytes of map flag space
+
+// Replacement for vanilla StartMapping()
+void StartMapping()
+{
+	using csvanilla::gMapping;
+	std::memset(gMapping, 0, sizeof gMapping);
+	if (uuidInitialized)
+		std::memcpy(ProfileUUID, &uuid, sizeof uuid);
+}
+
+BOOL LoadProfile(const char* name)
+{
+	if (!csvanilla::LoadProfile(name))
+		return FALSE;
+	if (uuidInitialized && std::memcmp(ProfileUUID, &uuid, sizeof uuid) != 0)
+	{
+		MessageBoxA(csvanilla::ghWnd, "The save file you are loading appears to have been created from a different world.\n"
+			"A new game will be started instead.", "UUID Mismatch", MB_ICONEXCLAMATION | MB_OK);
+		return FALSE;
+	}
+	// Clear TSC script queue on game reset
+	if (requestQueue != nullptr)
+		requestQueue->clearTSCQueue();
+	return TRUE;
+}
+
+BOOL InitializeGame(void* hWnd)
+{
+	// Clear TSC script queue on new game
+	if (requestQueue != nullptr)
+		requestQueue->clearTSCQueue();
+	return csvanilla::InitializeGame(hWnd);
+}
+
 } // end anonymous namespace
+
+void patchUUIDChecks();
 
 void applyGameHooks()
 {
 	applyTSCHooks();
+	patchUUIDChecks();
 	hookGameLoops();
 	patcher::writeCall(0x40B34C, SystemTaskWrapper);
+	const patcher::dword InitalizeGameCalls[] = {0x410497, 0x4104B0, 0x424D52, 0x424E1B};
+	for (auto addr : InitalizeGameCalls)
+		patcher::writeCall(addr, InitializeGame);
 }
 
 void applyTSCHooks()
@@ -79,13 +122,19 @@ void applyTSCHooks()
 		patcher::writeCall(address, PutTextScriptWrapper);
 }
 
+void patchUUIDChecks()
+{
+	patcher::replaceFunction(csvanilla::StartMapping, StartMapping);
+	const patcher::dword LoadProfileCalls[] = {0x410487, 0x412C7A, 0x424E08};
+	for (auto addr : LoadProfileCalls)
+		patcher::writeCall(addr, LoadProfile);
+}
 
 // I hope this is safe to initialize from within DllMain()...
 std::atomic<GameMode> currentGameMode = GameMode::INIT;
 #define MAKE_FUNC(name, args, mode, ...) int name args \
 { \
-	GameMode prevGameMode = currentGameMode; \
-	currentGameMode = mode; \
+	GameMode prevGameMode = currentGameMode.exchange(mode); \
 	int ret = csvanilla:: name (__VA_ARGS__); \
 	currentGameMode = prevGameMode; \
 	return ret; \
@@ -94,8 +143,13 @@ std::atomic<GameMode> currentGameMode = GameMode::INIT;
 namespace
 {
 MAKE_FUNC(ModeOpening, (void* hWnd), GameMode::OPENING, hWnd)
+
+// These functions contain hacks that use ESI without preserving its value
+#pragma runtime_checks("s", off)
 MAKE_FUNC(ModeTitle, (void* hWnd), GameMode::TITLE, hWnd)
 MAKE_FUNC(ModeAction, (void* hWnd), GameMode::ACTION, hWnd)
+#pragma runtime_checks("s", restore)
+
 MAKE_FUNC(CampLoop, (), GameMode::INVENTORY)
 MAKE_FUNC(StageSelectLoop, (int* event), GameMode::TELEPORTER, event)
 MAKE_FUNC(MiniMapLoop, (), GameMode::MINIMAP)
@@ -107,7 +161,7 @@ void hookGameLoops()
 {
 	using patcher::writeCall;
 	writeCall(0x40F6A7, ModeOpening);
-	//writeCall(0x40F6BC, ModeTitle); // Not working--ModeTitle() uses ESI without preserving its value
+	writeCall(0x40F6BC, ModeTitle);
 	writeCall(0x40F6D1, ModeAction);
 	writeCall(0x410725, CampLoop);
 	writeCall(0x4244CE, StageSelectLoop);

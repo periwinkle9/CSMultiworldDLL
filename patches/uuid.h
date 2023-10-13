@@ -8,4 +8,3 @@ extern bool uuidInitialized;
 
 void loadUUID();
 std::string getUUIDString();
-void patchUUIDChecks();
