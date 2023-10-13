@@ -202,8 +202,10 @@ void TSCExecutor::draw() const
 	if (mode == OperationMode::IDLE || !activeTextbox || isMS2Active())
 		return;
 	// TODO adjust these rects...
-	constexpr int TextX = 76;
-	constexpr int TextY = 52;
+	constexpr int TextX = 84;
+	constexpr int TextY = 33;
+	constexpr int GITX = TextX + 82;
+	constexpr int GITY = TextY - 18;
 	const RECT TextRect = {TextX, TextY, TextX + 198, TextY + 64};
 	const RECT TextSurfaceRect = {0, 0, 216, 48};
 	// Draw text
@@ -219,7 +221,7 @@ void TSCExecutor::draw() const
 			armsRect.right = armsRect.left + 16;
 			armsRect.bottom = armsRect.top + 16;
 			// Let's try drawing it here and see how that looks
-			csvanilla::PutBitmap3(&csvanilla::grcFull, TextRect.left - 26, TextRect.top - 3, &armsRect, 12);
+			csvanilla::PutBitmap3(&csvanilla::grcFull, GITX, GITY, &armsRect, 12);
 		}
 		else
 		{
@@ -229,7 +231,7 @@ void TSCExecutor::draw() const
 			itemRect.top = (itemID / 8) * 16;
 			itemRect.right = itemRect.left + 32;
 			itemRect.bottom = itemRect.top + 16;
-			csvanilla::PutBitmap3(&csvanilla::grcFull, TextRect.left - 32, TextRect.top - 3, &itemRect, 8);
+			csvanilla::PutBitmap3(&csvanilla::grcFull, GITX - 6, GITY, &itemRect, 8);
 		}
 	}
 }
