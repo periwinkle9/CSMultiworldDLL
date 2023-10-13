@@ -51,6 +51,7 @@ auto TSCExecutor::processCommand() -> CommandStatus
 {
 	if (currentPos == currentScript.end())
 	{
+		clearText();
 		mode = OperationMode::IDLE;
 		return CommandStatus::STOPPROCESSING;
 	}
@@ -87,7 +88,8 @@ auto TSCExecutor::processCommand() -> CommandStatus
 	bool keepProcessing = true;
 	switch (cmd2int(commandSubstr))
 	{
-	case TSCcmd<'E', 'N', 'D'>::value:
+	case TSCcmd<'E','N','D'>::value:
+		clearText();
 		mode = OperationMode::IDLE;
 		keepProcessing = false;
 		break;
@@ -237,7 +239,6 @@ auto TSCExecutor::processCommand() -> CommandStatus
 	case TSCcmd<'M','S','G'>::value:
 	case TSCcmd<'M','S','2'>::value:
 	case TSCcmd<'M','S','3'>::value:
-		clearText();
 		activeTextbox = true;
 		currentPos += 4;
 		keepProcessing = false;
