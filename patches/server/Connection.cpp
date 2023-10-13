@@ -71,9 +71,11 @@ asio::awaitable<void> Connection::handleRequest()
 			if (!response.empty())
 				co_await asio::async_write(socket, asio::buffer(response), asio::use_awaitable);
 		}
+		logger.logDebug("Socket is closed");
 	}
-	catch (std::exception&)
+	catch (std::exception& e)
 	{
+		logger.logDebug(std::format("Stopping connection due to exception thrown: {}", e.what()));
 		connectionManager.stop(shared_from_this());
 	}
 }
