@@ -5,16 +5,18 @@
 #include <set>
 #include <memory>
 #include <format>
+#include <filesystem>
+#include <fstream>
 #include <asio/co_spawn.hpp>
 #include <asio/detached.hpp>
 #include <asio/post.hpp>
 #include <asio/use_awaitable.hpp>
 #include "../Logger.h"
+#include "doukutsu/window.h"
 
 using asio::awaitable;
 using asio::ip::tcp;
 
-// Delay initialization to avoid calling the constructor in DllMain()
 Server* tcpServer;
 
 namespace
@@ -31,6 +33,33 @@ awaitable<void> listener(tcp::acceptor& acceptor, ConnectionManager& connectionM
 	}
 }
 
+unsigned short getPort()
+{
+	namespace fs = std::filesystem;
+	fs::path path{csvanilla::gModulePath};
+	path /= "port";
+	const unsigned short DefaultPort = 5451;
+
+	std::ifstream ifs{path};
+	unsigned short port;
+	if (ifs && ifs >> port)
+		return port;
+	else
+		return DefaultPort;
+}
+
+} // end anonymous namespace
+
+// Delay initialization to avoid calling the constructor in DllMain()
+void initServer()
+{
+	tcpServer = new Server(getPort());
+}
+void endServer()
+{
+	tcpServer->stop();
+	delete tcpServer;
+	tcpServer = nullptr;
 }
 
 Server::Server() : serverThread{}, io_context{}, acceptor{io_context}, activeConnections{}, isRunning{false}

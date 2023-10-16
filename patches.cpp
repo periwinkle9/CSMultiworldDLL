@@ -27,7 +27,7 @@ void applyPostInitPatches()
 	if (csvanilla::IsKeyFile("debug"))
 #endif
 		initConsole();
-	tcpServer = new Server(5451);
+	initServer();
 }
 
 /* If patcher::setupCleanupHook() is called above, then this function will be called
@@ -35,9 +35,7 @@ void applyPostInitPatches()
 */
 void cleanup()
 {
-	tcpServer->stop();
-	delete tcpServer;
-	tcpServer = nullptr;
+	endServer();
 	exitConsole();
 	endTSC2();
 	endRequestQueue();

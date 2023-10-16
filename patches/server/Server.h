@@ -23,3 +23,6 @@ public:
 };
 
 extern Server* tcpServer;
+
+void initServer();
+void endServer();
