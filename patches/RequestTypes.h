@@ -8,19 +8,22 @@
 
 namespace RequestTypes
 {
-struct FlagRequest
+struct SynchronizedRequest
 {
-	// Input
-	std::vector<std::int32_t> flags;
-	// Output
-	std::vector<unsigned char> result;
-
 	std::mutex mutex;
 	std::condition_variable cv;
 	std::atomic_bool fulfilled;
 };
 
-struct MemoryReadRequest
+struct FlagRequest: SynchronizedRequest
+{
+	// Input
+	std::vector<std::int32_t> flags;
+	// Output
+	std::vector<unsigned char> result;
+};
+
+struct MemoryReadRequest: SynchronizedRequest
 {
 	// Input
 	std::uint32_t address;
@@ -28,22 +31,14 @@ struct MemoryReadRequest
 	// Output
 	std::vector<unsigned char> result;
 	std::uint32_t errorCode;
-	
-	std::mutex mutex;
-	std::condition_variable cv;
-	std::atomic_bool fulfilled;
 };
 
-struct MemoryWriteRequest
+struct MemoryWriteRequest: SynchronizedRequest
 {
 	// Input
 	std::uint32_t address;
 	std::vector<unsigned char> bytes;
 	// Output
 	std::uint32_t errorCode;
-
-	std::mutex mutex;
-	std::condition_variable cv;
-	std::atomic_bool fulfilled;
 };
-}
+} // end namespace RequestTypes

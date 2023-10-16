@@ -12,6 +12,7 @@
 
 RequestQueue* requestQueue;
 
+// Delay initialization of request queue to avoid calling the constructor from within DllMain()
 void initRequestQueue()
 {
 	requestQueue = new RequestQueue;

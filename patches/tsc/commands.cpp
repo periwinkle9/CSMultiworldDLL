@@ -93,7 +93,7 @@ auto TSCExecutor::processCommand() -> CommandStatus
 		mode = OperationMode::IDLE;
 		keepProcessing = false;
 		break;
-	case TSCcmd<'L', 'I', '+'>::value:
+	case TSCcmd<'L','I','+'>::value:
 		if (!hasArgs(1))
 			return CommandStatus::ISTEXT;
 		csvanilla::AddLifeMyChar(getArg(1));
@@ -116,7 +116,7 @@ auto TSCExecutor::processCommand() -> CommandStatus
 		csvanilla::AddItemData(getArg(1));
 		currentPos += 8;
 		break;
-	case TSCcmd<'I', 'T', '-'>::value:
+	case TSCcmd<'I','T','-'>::value:
 		if (!hasArgs(1))
 			return CommandStatus::ISTEXT;
 		csvanilla::SubItemData(getArg(1));
@@ -201,25 +201,25 @@ auto TSCExecutor::processCommand() -> CommandStatus
 		csvanilla::ShowMyChar(1);
 		currentPos += 4;
 		break;
-	case TSCcmd<'F', 'L', '+'>::value:
+	case TSCcmd<'F','L','+'>::value:
 		if (!hasArgs(1))
 			return CommandStatus::ISTEXT;
 		csvanilla::SetNPCFlag(getArg(1));
 		currentPos += 8;
 		break;
-	case TSCcmd<'F', 'L', '-'>::value:
+	case TSCcmd<'F','L','-'>::value:
 		if (!hasArgs(1))
 			return CommandStatus::ISTEXT;
 		csvanilla::CutNPCFlag(getArg(1));
 		currentPos += 8;
 		break;
-	case TSCcmd<'S', 'K', '+'>::value:
+	case TSCcmd<'S','K','+'>::value:
 		if (!hasArgs(1))
 			return CommandStatus::ISTEXT;
 		csvanilla::SetSkipFlag(getArg(1));
 		currentPos += 8;
 		break;
-	case TSCcmd<'S', 'K', '-'>::value:
+	case TSCcmd<'S','K','-'>::value:
 		if (!hasArgs(1))
 			return CommandStatus::ISTEXT;
 		csvanilla::CutSkipFlag(getArg(1));

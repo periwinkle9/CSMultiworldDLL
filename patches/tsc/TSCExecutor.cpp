@@ -15,6 +15,7 @@
 
 TSCExecutor* secondaryTSCParser;
 
+// Delay initialization of secondary TSC parser to avoid calling the constructor from within DllMain()
 void initTSC2()
 {
 	secondaryTSCParser = new TSCExecutor;
@@ -25,12 +26,14 @@ void endTSC2()
 	secondaryTSCParser = nullptr;
 }
 
+const RECT TextSurfaceRect = {0, 0, 216, 48};
+
 TSCExecutor::TSCExecutor() : scriptBuffer{}, currentScript{}, currentPos{}, mode{OperationMode::IDLE},
 	wait{0}, item{0}, NUMnum{0}, textLines{}, currentLine{0}, activeTextbox{false}, updateText{false}
 {
 	// Create text surface using unused surface ID
 	// (This way we won't have to clean it up ourselves)
-	if (!csvanilla::MakeSurface_Generic(216, 48, TextSurfaceID, FALSE))
+	if (!csvanilla::MakeSurface_Generic(TextSurfaceRect.right, TextSurfaceRect.bottom, TextSurfaceID, FALSE))
 		throw std::runtime_error("Couldn't create text surface");
 }
 
@@ -143,7 +146,7 @@ void TSCExecutor::processText()
 	if (currentLine < textLines.size())
 	{
 		textLines[currentLine] += newText;
-		if (textLines[currentLine].size() > 39) // Empirically-observed max text line length without cutting off
+		if (textLines[currentLine].size() > 43) // Empirically-observed max text line length without cutting off
 			logger.logWarning("Text line too long; it will be cut off");
 	}
 	else
@@ -163,12 +166,12 @@ void TSCExecutor::clearText()
 void TSCExecutor::writeTextToSurface() const
 {
 	// Clear out surface first, just to be safe
-	const RECT TextSurfaceRect = {0, 0, 216, 48};
 	csvanilla::CortBox2(&TextSurfaceRect, 0, TextSurfaceID);
 
 	for (unsigned i = 0; i < textLines.size(); ++i)
 		if (!textLines[i].empty())
 		{
+			// Draw text with shadow
 			csvanilla::PutText2(0, i * 14 + 1, textLines[i].c_str(), RGB(0x11, 0x00, 0x22), TextSurfaceID);
 			csvanilla::PutText2(0, i * 14, textLines[i].c_str(), RGB(0xFF, 0xFF, 0xFE), TextSurfaceID);
 		}
@@ -180,7 +183,7 @@ void TSCExecutor::jumpEvent(int eventNum)
 	clearText();
 	wait = 0; // I don't know if resetting this is necessary, but let's do it anyways just to be safe
 	// Look for event in vanilla script
-	const int TSC_BUFFER_SIZE = 0x5000;
+	const int TSC_BUFFER_SIZE = 0x5000; // Vanilla TSC buffer allocation size
 	const char* const tscBuffer = csvanilla::gTS.data;
 	const char* eventStart = tscBuffer;
 	bool found = false;
@@ -224,13 +227,12 @@ void TSCExecutor::draw() const
 	// Nothing to draw if not running, no textbox, or <MS2/<MS3 is active in the main parser
 	if (mode == OperationMode::IDLE || !activeTextbox || isMS2Active())
 		return;
-	// TODO adjust these rects...
+	// X and Y coordinates of text and <GIT graphic
 	constexpr int TextX = 84;
 	constexpr int TextY = 33;
 	constexpr int GITX = TextX + 82;
 	constexpr int GITY = TextY - 18;
-	const RECT TextRect = {TextX, TextY, TextX + 198, TextY + 64};
-	const RECT TextSurfaceRect = {0, 0, 216, 48};
+	const RECT TextRect = {TextX, TextY, TextX + TextSurfaceRect.right, TextY + TextSurfaceRect.bottom};
 	// Draw text
 	csvanilla::PutBitmap3(&TextRect, TextRect.left, TextRect.top, &TextSurfaceRect, TextSurfaceID);
 	// Draw GIT

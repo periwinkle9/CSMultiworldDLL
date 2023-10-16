@@ -45,6 +45,26 @@ void Connection::stop()
 	socket.close();
 }
 
+namespace
+{
+// Reads an integer in little-endian format from the bytes starting from the given position
+template <typename IntType, typename Iter>
+IntType readInteger(Iter pos)
+{
+	IntType result = 0;
+	for (std::size_t i = 0; i < sizeof(IntType); ++i)
+		result |= (static_cast<std::uint8_t>(*pos++) << (i * 8));
+	return result;
+}
+// Appends the little-endian representation of the given value
+template <typename IntType>
+void writeInteger(std::vector<char>& data, IntType value)
+{
+	for (std::size_t i = 0; i < sizeof(IntType); ++i)
+		data.push_back(static_cast<char>((value >> (i * 8)) & 0xFF));
+}
+} // end anonymous namespace
+
 asio::awaitable<void> Connection::handleRequest()
 {
 	try
@@ -53,9 +73,7 @@ asio::awaitable<void> Connection::handleRequest()
 		{
 			// Read header
 			co_await asio::async_read(socket, asio::buffer(request.header), asio::use_awaitable);
-			std::uint32_t dataSize = 0;
-			for (int i = 0; i < 4; ++i)
-				dataSize |= (request.header[i + 1] << (8 * i));
+			std::uint32_t dataSize = readInteger<std::uint32_t>(request.header.cbegin() + 1);
 			request.data.clear();
 
 			// Read data
@@ -75,20 +93,20 @@ asio::awaitable<void> Connection::handleRequest()
 	}
 	catch (std::exception& e)
 	{
-		logger.logDebug(std::format("Stopping connection due to exception thrown: {}", e.what()));
+		logger.logDebug(std::format("Stopping connection due to exception: {}", e.what()));
 		connectionManager.stop(shared_from_this());
 	}
 }
 
 static std::vector<std::int32_t> parseNumberList(const std::vector<char>& data)
 {
+	if (data.size() % 4 != 0)
+		logger.logWarning(std::format("Received data not a multiple of 4 bytes (size = {}); ignoring the last {} bytes", data.size(), data.size() % 4));
 	std::vector<std::int32_t> output;
 	output.reserve(data.size() / 4);
-	for (std::vector<char>::size_type i = 0; i < data.size(); i += 4)
+	for (std::vector<char>::size_type i = 0; i + 3 < data.size(); i += 4)
 	{
-		std::int32_t value = 0;
-		for (unsigned bit = 0; bit < 4 && i + bit < data.size(); ++bit)
-			value |= (static_cast<unsigned char>(data[i + bit]) << (8 * bit));
+		std::int32_t value = readInteger<std::int32_t>(data.cbegin() + i);
 		output.push_back(value);
 	}
 	return output;
@@ -110,8 +128,6 @@ static std::string getServerInfoString()
 		"max_hp": {}
 	}}
 }})!!";
-	/*if (!uuidInitialized)
-		loadUUID();*/ // Just in case
 	return std::format(outputFormat, API_Version, "freeware", getUUIDString(),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gFlagNPC),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gMapping),
@@ -125,7 +141,7 @@ void Connection::prepareResponse()
 	enum RequestType: unsigned char {HANDSHAKE, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, READ_MEMORY, WRITE_MEMORY, QUERY_GAME_STATE, DISCONNECT = 255};
 
 	{
-		logger.logInfo(std::format("Received request: type = {}, size = {}", static_cast<int>(request.header[0]), request.data.size()));
+		logger.logInfo(std::format("Received request: type = {:d}, size = {}", request.header[0], request.data.size()));
 		std::ostringstream oss;
 		oss << "Raw request data: " << std::hex;
 		for (auto byte : request.data)
@@ -133,13 +149,12 @@ void Connection::prepareResponse()
 		logger.logDebug(oss.str());
 	}
 
-	auto makeError = [this](std::string_view message) {
+	auto makeError = [this](std::string_view message, Logger::LogLevel logLevel = Logger::LogLevel::Error) {
 		response.clear();
 		response.push_back(-1);
-		for (int i = 0; i < 4; ++i)
-			response.push_back(static_cast<char>((message.size() >> (i * 8)) & 0xFF));
+		writeInteger<std::uint32_t>(response, message.size());
 		response.insert(response.end(), message.begin(), message.end());
-		logger.logError(std::string{message});
+		logger.log(logLevel, std::string{message});
 	};
 	response.clear();
 	switch (request.header[0])
@@ -148,8 +163,7 @@ void Connection::prepareResponse()
 	{
 		std::string serverInfo = getServerInfoString();
 		response.push_back(HANDSHAKE);
-		for (int i = 0; i < 4; ++i)
-			response.push_back(static_cast<char>((serverInfo.size() >> (i * 8)) & 0xFF));
+		writeInteger<std::uint32_t>(response, serverInfo.size());
 		response.insert(response.end(), serverInfo.begin(), serverInfo.end());
 		break;
 	}
@@ -186,9 +200,7 @@ void Connection::prepareResponse()
 
 		response.reserve(flagRequest->flags.size() + 5);
 		response.push_back(GET_FLAGS);
-		// Write response length
-		for (int i = 0; i < 4; ++i)
-			response.push_back(static_cast<char>((flagRequest->flags.size() >> (i * 8)) & 0xFF));
+		writeInteger<std::uint32_t>(response, flagRequest->flags.size());
 
 		// Submit request and wait for it to be fulfilled
 		flagRequest->fulfilled = false;
@@ -204,7 +216,7 @@ void Connection::prepareResponse()
 			if (flagRequest->cv.wait_for(lock, 1s, [&flagRequest]() -> bool { return flagRequest->fulfilled; }))
 				response.insert(response.end(), flagRequest->result.begin(), flagRequest->result.end());
 			else
-				makeError("[2] Request timed out");
+				makeError("[2] Request timed out", Logger::LogLevel::Warning);
 		}
 		else
 			makeError("[2] Request queue not initialized");
@@ -247,10 +259,8 @@ void Connection::prepareResponse()
 		if (request.data.size() == 6)
 		{
 			std::shared_ptr<RequestTypes::MemoryReadRequest> memReadReq{new RequestTypes::MemoryReadRequest};
-			memReadReq->address = 0;
-			for (int i = 0; i < 4; ++i)
-				memReadReq->address |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
-			memReadReq->numBytes = static_cast<unsigned char>(request.data[4]) | (static_cast<unsigned char>(request.data[5]) << 8);
+			memReadReq->address = readInteger<std::uint32_t>(request.data.cbegin());
+			memReadReq->numBytes = readInteger<std::uint16_t>(request.data.cbegin() + 4);
 			logger.logInfo(std::format("Received request for {} bytes of memory starting at address {:#x}", memReadReq->numBytes, memReadReq->address));
 			response.push_back(READ_MEMORY);
 			response.push_back(request.data[4]);
@@ -273,52 +283,57 @@ void Connection::prepareResponse()
 					if (memReadReq->errorCode == 0)
 						response.insert(response.end(), memReadReq->result.begin(), memReadReq->result.end());
 					else
-						makeError(std::format("[4] ReadProcessMemory failed: error code {}", memReadReq->errorCode));
+						makeError(std::format("[4] ReadProcessMemory (addr = {:#x}, size = {}) failed: error code {}",
+							memReadReq->address, memReadReq->numBytes, memReadReq->errorCode), Logger::LogLevel::Warning);
 				}
 				else
-					makeError("[4] Request timed out");
+					makeError("[4] Request timed out", Logger::LogLevel::Warning);
 			}
 			else
 				makeError("[4] Request queue not initialized");
 		}
 		else
-			makeError(std::format("[4] Unexpected request size (expected 6, received {} bytes)", request.data.size()));
+			makeError(std::format("[4] Unexpected request size (expected 6, received {} bytes)", request.data.size()), Logger::LogLevel::Warning);
 		break;
 	case WRITE_MEMORY:
-	{
-		std::shared_ptr<RequestTypes::MemoryWriteRequest> memWriteReq{new RequestTypes::MemoryWriteRequest};
-		response.resize(5);
-		memWriteReq->address = 0;
-		for (int i = 0; i < 4; ++i)
-			memWriteReq->address |= (static_cast<unsigned char>(request.data[i]) << (i * 8));
-		memWriteReq->bytes.insert(memWriteReq->bytes.begin(), request.data.begin() + 4, request.data.end());
-		logger.logInfo(std::format("Received request for writing {} bytes of memory starting at address {:#x}", memWriteReq->bytes.size(), memWriteReq->address));
-
-		// Submit request and wait for it to be fulfilled
-		memWriteReq->fulfilled = false;
-		if (requestQueue != nullptr)
+		if (request.data.size() > 4)
 		{
-			RequestQueue::Request req;
-			req.type = RequestQueue::Request::RequestType::MEMWRITE;
-			req.data = memWriteReq;
-			requestQueue->push(std::move(req));
+			std::shared_ptr<RequestTypes::MemoryWriteRequest> memWriteReq{new RequestTypes::MemoryWriteRequest};
+			response.resize(5);
+			memWriteReq->address = readInteger<std::uint32_t>(request.data.cbegin());
+			memWriteReq->bytes.insert(memWriteReq->bytes.begin(), request.data.begin() + 4, request.data.end());
+			logger.logInfo(std::format("Received request for writing {} bytes of memory starting at address {:#x}", memWriteReq->bytes.size(), memWriteReq->address));
 
-			using namespace std::chrono_literals;
-			std::unique_lock<std::mutex> lock{memWriteReq->mutex};
-			if (memWriteReq->cv.wait_for(lock, 1s, [&memWriteReq]() -> bool { return memWriteReq->fulfilled; }))
+			// Submit request and wait for it to be fulfilled
+			memWriteReq->fulfilled = false;
+			if (requestQueue != nullptr)
 			{
-				if (memWriteReq->errorCode == 0)
-					response[0] = WRITE_MEMORY;
+				RequestQueue::Request req;
+				req.type = RequestQueue::Request::RequestType::MEMWRITE;
+				req.data = memWriteReq;
+				requestQueue->push(std::move(req));
+
+				using namespace std::chrono_literals;
+				std::unique_lock<std::mutex> lock{memWriteReq->mutex};
+				if (memWriteReq->cv.wait_for(lock, 1s, [&memWriteReq]() -> bool { return memWriteReq->fulfilled; }))
+				{
+					if (memWriteReq->errorCode == 0)
+						response[0] = WRITE_MEMORY;
+					else
+						makeError(std::format("[5] WriteProcessMemory (addr = {:#x}, size = {}) failed: error code {}",
+							memWriteReq->address, memWriteReq->bytes.size(), memWriteReq->errorCode), Logger::LogLevel::Warning);
+				}
 				else
-					makeError(std::format("[5] WriteProcessMemory failed: error code {}", memWriteReq->errorCode));
+					makeError("[5] Request timed out", Logger::LogLevel::Warning);
 			}
 			else
-				makeError("[5] Request timed out");
+				makeError("[5] Request queue not initialized");
 		}
+		else if (request.data.size() == 4)
+			makeError("[5] Requested to write 0 bytes of memory", Logger::LogLevel::Warning);
 		else
-			makeError("[5] Request queue not initialized");
+			makeError(std::format("[5] Unexpected request size (expected > 4 bytes, received {} bytes", request.data.size()), Logger::LogLevel::Warning);
 		break;
-	}
 	case QUERY_GAME_STATE:
 	{
 		response.push_back(QUERY_GAME_STATE);
@@ -334,13 +349,12 @@ void Connection::prepareResponse()
 		{
 			// Unsynchronized memory access...let's hope it doesn't cause any problems
 			std::string_view mapName{csvanilla::gTMT[csvanilla::gStageNo].map};
-			for (int i = 0; i < 4; ++i)
-				response.push_back(static_cast<char>((mapName.size() >> (i * 8)) & 0xFF));
+			writeInteger<std::uint32_t>(response, mapName.size());
 			response.insert(response.end(), mapName.begin(), mapName.end());
 			break;
 		}
 		default:
-			makeError(std::format("[6] Unknown request type {}", type));
+			makeError(std::format("[6] Unknown request type {}", type), Logger::LogLevel::Warning);
 		}
 
 		break;
@@ -350,14 +364,14 @@ void Connection::prepareResponse()
 		connectionManager.stop(shared_from_this());
 		break;
 	default: // Unknown request! Uh-oh
-		makeError(std::format("[{}] Unknown request type", static_cast<int>(request.header[0])));
+		makeError(std::format("[{}] Unknown request type", static_cast<int>(request.header[0])), Logger::LogLevel::Warning);
 
 		{
 			std::ostringstream oss;
 			oss << "Request data: " << std::hex;
 			for (auto byte : request.data)
 				oss << static_cast<int>(byte) << ' ';
-			logger.logWarning(oss.str());
+			logger.logInfo(oss.str());
 		}
 	}
 }

@@ -29,7 +29,7 @@ void handleRequest(const Request& request)
 	}
 }
 
-// Replaces every call to TextScriptProc()
+// Replaces the call to TextScriptProc() in ModeAction()
 int TextScriptProcWrapper()
 {
 	if (secondaryTSCParser != nullptr)
@@ -46,7 +46,7 @@ int TextScriptProcWrapper()
 	return csvanilla::TextScriptProc();
 }
 
-// Replaces every call to PutTextScript()
+// Replaces the call to PutTextScript() in ModeAction()
 void PutTextScriptWrapper()
 {
 	csvanilla::PutTextScript();
@@ -118,12 +118,10 @@ void applyGameHooks()
 
 void applyTSCHooks()
 {
-	const patcher::dword TextScriptProcCalls[] = {0x4107EE}; /* {0x401E34, 0x40F8EE, 0x4107EE, 0x41DAD8} */;
-	for (patcher::dword address : TextScriptProcCalls)
-		patcher::writeCall(address, TextScriptProcWrapper);
-	const patcher::dword PutTextScriptCalls[] = {0x41086F}; /* {0x401E7F, 0x40F91F, 0x41086F, 0x41DB23} */;
-	for (patcher::dword address : PutTextScriptCalls)
-		patcher::writeCall(address, PutTextScriptWrapper);
+	// Hook into TextScriptProc() and PutTextScript() in ModeAction()
+	// (We don't run the secondary TSC parser anywhere else because it's not an appropriate time to receive items)
+	patcher::writeCall(0x4107EE, TextScriptProcWrapper);
+	patcher::writeCall(0x41086F, PutTextScriptWrapper);
 }
 
 void patchUUIDChecks()
@@ -144,6 +142,8 @@ std::atomic<GameMode> currentGameMode = GameMode::INIT;
 	return ret; \
 }
 
+// Workaround for wrapping ModeTitle() and ModeAction() which contain ASM hacks that clobber ESI,
+// which also causes issues with using the approach in MAKE_FUNC above
 #define MAKE_GAME_FUNC(name, mode) int name(void* hWnd) \
 { \
 	currentGameMode = mode; \
@@ -154,13 +154,15 @@ namespace
 {
 MAKE_FUNC(ModeOpening, (void* hWnd), GameMode::OPENING, hWnd)
 
-// These functions contain hacks that use ESI without preserving its value
+// MSVC's runtime stack frame checks work by saving ESP to ESI before a function call and then checking that ESP was restored correctly after the call.
+// These functions contain hacks that use ESI without preserving its value. This will spuriously trigger the runtime stack frame check since ESI will
+// no longer be equal to ESP, but in reality there is no stack frame error so this check can safely be disabled for these functions.
 #pragma runtime_checks("s", off)
 MAKE_GAME_FUNC(ModeTitle, GameMode::TITLE)
 MAKE_GAME_FUNC(ModeAction, GameMode::ACTION)
 #pragma runtime_checks("s", restore)
 
-// Replaces the EndMapData() call when exiting
+// Replaces the EndMapData() call when exiting (sets currentGameMode correctly, since the MAKE_GAME_FUNC workaround doesn't do this)
 void DeinitHook()
 {
 	currentGameMode = GameMode::INIT;

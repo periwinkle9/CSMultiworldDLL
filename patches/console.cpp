@@ -35,6 +35,7 @@ public:
 
 ConsoleManager* console = nullptr;
 
+// Delay initialization of console to avoid calling the constructor from within DllMain()
 void initConsole()
 {
 	console = new ConsoleManager;
@@ -57,7 +58,7 @@ void ConsoleManager::handleInputs()
 
 		// Handle input
 		isEnterPressed = false;
-		bool prevLoggerStdout = logger.useStdout(false);
+		bool prevLoggerStdout = logger.useStdout(false); // Pause console logging while a command is being entered
 
 		std::cout << "Enter command: ";
 		std::string command;

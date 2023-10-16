@@ -14,6 +14,7 @@
 using asio::awaitable;
 using asio::ip::tcp;
 
+// Delay initialization to avoid calling the constructor in DllMain()
 Server* tcpServer;
 
 namespace
