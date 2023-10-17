@@ -5,13 +5,12 @@
 #include <set>
 #include <memory>
 #include <format>
-#include <filesystem>
-#include <fstream>
 #include <asio/co_spawn.hpp>
 #include <asio/detached.hpp>
 #include <asio/post.hpp>
 #include <asio/use_awaitable.hpp>
 #include "../Logger.h"
+#include "../Config.h"
 #include "doukutsu/window.h"
 
 using asio::awaitable;
@@ -33,27 +32,12 @@ awaitable<void> listener(tcp::acceptor& acceptor, ConnectionManager& connectionM
 	}
 }
 
-unsigned short getPort()
-{
-	namespace fs = std::filesystem;
-	fs::path path{csvanilla::gModulePath};
-	path /= "port";
-	const unsigned short DefaultPort = 5451;
-
-	std::ifstream ifs{path};
-	unsigned short port;
-	if (ifs && ifs >> port)
-		return port;
-	else
-		return DefaultPort;
-}
-
 } // end anonymous namespace
 
 // Delay initialization to avoid calling the constructor in DllMain()
 void initServer()
 {
-	tcpServer = new Server(getPort());
+	tcpServer = new Server(config.serverPort());
 }
 void endServer()
 {
@@ -74,7 +58,7 @@ void Server::start(unsigned short port)
 	serverThread = std::thread([this, port]() {
 		tcp::endpoint endpoint{tcp::v4(), port};
 		acceptor.open(endpoint.protocol());
-		acceptor.set_option(tcp::acceptor::reuse_address(true));
+		acceptor.set_option(tcp::acceptor::reuse_address(config.allowReuseAddress()));
 		acceptor.bind(endpoint);
 		acceptor.listen();
 		asio::co_spawn(io_context, listener(acceptor, activeConnections), asio::detached);

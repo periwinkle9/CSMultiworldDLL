@@ -109,6 +109,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="patches\Config.cpp" />
     <ClCompile Include="dinputdll_proxy.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="patches\Logger.cpp" />
@@ -127,6 +128,7 @@
     <None Include="exports_msvc.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="patches\Config.h" />
     <ClInclude Include="doukutsu\all.h" />
     <ClInclude Include="doukutsu\audio.h" />
     <ClInclude Include="doukutsu\background.h" />

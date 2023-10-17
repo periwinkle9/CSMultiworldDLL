@@ -5,18 +5,11 @@
 #include <format>
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include "Config.h"
 
-#ifdef NDEBUG
-constexpr bool DefaultStdout = false;
-constexpr Logger::LogLevel DefaultLogLevel = Logger::LogLevel::Error;
-#else
-constexpr bool DefaultStdout = true;
-constexpr Logger::LogLevel DefaultLogLevel = Logger::LogLevel::Debug;
-#endif
+Logger logger;
 
-Logger logger{DefaultLogLevel};
-
-Logger::Logger(LogLevel level) : logLevel{level}, isUsingStdout{DefaultStdout}, isShowingTimestamps{true}
+Logger::Logger(LogLevel level) : logLevel{level}, isUsingStdout{false}, isShowingTimestamps{true}
 {}
 
 void Logger::log(LogLevel level, std::string message)

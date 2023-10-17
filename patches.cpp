@@ -1,5 +1,7 @@
 #include "patch_utils.h"
 #include "patches/console.h"
+#include "patches/Config.h"
+#include "patches/Logger.h"
 #include "patches/tsc/TSCExecutor.h"
 #include "patches/server/Server.h"
 #include "patches/RequestQueue.h"
@@ -20,12 +22,12 @@ void applyPatches()
  */
 void applyPostInitPatches()
 {
+	config.load("settings.ini");
+	logger.setLogLevel(static_cast<Logger::LogLevel>(config.logLevel()));
 	loadUUID();
 	initRequestQueue();
 	initTSC2();
-#ifdef NDEBUG
-	if (csvanilla::IsKeyFile("debug"))
-#endif
+	if (config.enableConsole())
 		initConsole();
 	initServer();
 }
