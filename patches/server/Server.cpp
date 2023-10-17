@@ -5,6 +5,7 @@
 #include <set>
 #include <memory>
 #include <format>
+#include <stdexcept>
 #include <asio/co_spawn.hpp>
 #include <asio/detached.hpp>
 #include <asio/post.hpp>
@@ -56,16 +57,24 @@ Server::Server(unsigned short port) : Server{}
 void Server::start(unsigned short port)
 {
 	serverThread = std::thread([this, port]() {
-		tcp::endpoint endpoint{tcp::v4(), port};
-		acceptor.open(endpoint.protocol());
-		acceptor.set_option(tcp::acceptor::reuse_address(config.allowReuseAddress()));
-		acceptor.bind(endpoint);
-		acceptor.listen();
-		asio::co_spawn(io_context, listener(acceptor, activeConnections), asio::detached);
-		logger.logInfo(std::format("Starting server on port {}", port));
-		io_context.run();
+		try
+		{
+			tcp::endpoint endpoint{tcp::v4(), port};
+			acceptor.open(endpoint.protocol());
+			acceptor.set_option(tcp::acceptor::reuse_address(config.allowReuseAddress()));
+			acceptor.bind(endpoint);
+			acceptor.listen();
+			asio::co_spawn(io_context, listener(acceptor, activeConnections), asio::detached);
+			logger.logInfo(std::format("Starting server on port {}", port));
+			isRunning = true;
+			io_context.run();
+		}
+		catch (const std::exception& e)
+		{
+			isRunning = false;
+			logger.logError(std::format("Server terminated due to exception: {}", e.what()));
+		}
 	});
-	isRunning = true;
 }
 
 void Server::stop()
