@@ -79,6 +79,13 @@ asio::awaitable<void> Connection::handleRequest()
 			// Read data
 			if (dataSize > 0)
 			{
+				// Warn on unusually large request (bad format?)
+				if (dataSize > 1024 * 1024) // 1 MiB
+				{
+					logger.logWarning(std::format("Received unusually large request of type {:d}, size = {} (wrong format?)",
+						request.header[0], dataSize));
+					logger.logWarning("This operation will block forever if this is not the actual amount of data being sent");
+				}
 				request.data.resize(dataSize);
 				co_await asio::async_read(socket, asio::buffer(request.data), asio::use_awaitable);
 			}
