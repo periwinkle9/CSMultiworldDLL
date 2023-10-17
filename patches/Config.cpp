@@ -16,7 +16,7 @@ constexpr bool DefaultEnableConsole = true;
 constexpr int DefaultLogLevel = 4;
 #endif
 
-Config::Config() : port(DefaultPort), reuseAddress(true), console(DefaultEnableConsole), maxLogLevel(DefaultLogLevel)
+Config::Config() : port(DefaultPort), console(DefaultEnableConsole), maxLogLevel(DefaultLogLevel)
 {}
 
 void Config::load(const char* name)
@@ -29,7 +29,6 @@ void Config::load(const char* name)
 		std::string pathString = iniPath.string();
 		const char* pathStr = pathString.c_str();
 		port = GetPrivateProfileIntA("server", "port", DefaultPort, pathStr);
-		reuseAddress = GetPrivateProfileIntA("server", "allow_reuse_address", 1, pathStr);
 		console = GetPrivateProfileIntA("debug", "show_console", DefaultEnableConsole, pathStr);
 		// Also enable console if "debug" file exists
 		console |= fs::is_regular_file(gamePath / "debug");

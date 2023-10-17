@@ -61,7 +61,7 @@ void Server::start(unsigned short port)
 		{
 			tcp::endpoint endpoint{tcp::v4(), port};
 			acceptor.open(endpoint.protocol());
-			acceptor.set_option(tcp::acceptor::reuse_address(config.allowReuseAddress()));
+			acceptor.set_option(tcp::acceptor::reuse_address(true));
 			acceptor.bind(endpoint);
 			acceptor.listen();
 			asio::co_spawn(io_context, listener(acceptor, activeConnections), asio::detached);
