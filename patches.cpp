@@ -23,6 +23,8 @@ void applyPatches()
 void applyPostInitPatches()
 {
 	config.load("settings.ini");
+	if (config.use60fps())
+		patch60fps();
 	logger.setLogLevel(static_cast<Logger::LogLevel>(config.logLevel()));
 	loadUUID();
 	initRequestQueue();

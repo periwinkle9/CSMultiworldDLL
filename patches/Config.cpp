@@ -15,8 +15,9 @@ constexpr int DefaultLogLevel = 1;
 constexpr bool DefaultEnableConsole = true;
 constexpr int DefaultLogLevel = 4;
 #endif
+constexpr bool Default60FPS = false;
 
-Config::Config() : port(DefaultPort), console(DefaultEnableConsole), maxLogLevel(DefaultLogLevel)
+Config::Config() : port(DefaultPort), console(DefaultEnableConsole), enable60fps(Default60FPS), maxLogLevel(DefaultLogLevel)
 {}
 
 void Config::load(const char* name)
@@ -32,6 +33,7 @@ void Config::load(const char* name)
 		console = GetPrivateProfileIntA("debug", "show_console", DefaultEnableConsole, pathStr);
 		// Also enable console if "debug" file exists
 		console |= fs::is_regular_file(gamePath / "debug");
+		enable60fps = GetPrivateProfileIntA("config", "60fps", Default60FPS, pathStr);
 		maxLogLevel = GetPrivateProfileIntA("debug", "log_level", DefaultLogLevel, pathStr);
 		if (maxLogLevel < 0)
 			maxLogLevel = 0;
