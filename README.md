@@ -6,7 +6,19 @@ simultaneously alongside the game's "main" TSC processor;
 TSC parser (among other things);
 3. Spawns a debug console allowing one to interact with both of those things.
 For debug builds this is always enabled, but on release builds you can enable it
-by creating a file called `debug` (with no extension) in the same directory.
+by editing the configuration file (see below).
+
+## Configuration
+The DLL can read settings from `settings.ini`, placed in the same directory as the game.
+In particular, if you prefer to play the game at 60 FPS (Cave Story+ speed), you can write
+this in your `settings.ini`:
+```ini
+[config]
+60fps=1
+```
+
+A full list of recognized settings and their default values can be found in the
+[`settings.ini`](settings.ini) file included in this repo.
 
 ## Debug console usage
 If the debug console is enabled, press Alt+Enter from the game window to bring up
