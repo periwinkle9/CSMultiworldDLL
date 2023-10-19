@@ -3,6 +3,7 @@
 #include "tsc/TSCExecutor.h"
 #include "RequestQueue.h"
 #include "uuid.h"
+#include "Config.h"
 #include "doukutsu/inventory.h"
 #include "doukutsu/map.h"
 #include "doukutsu/misc.h"
@@ -77,7 +78,7 @@ BOOL LoadProfile(const char* name)
 {
 	if (!csvanilla::LoadProfile(name))
 		return FALSE;
-	if (uuidInitialized && std::memcmp(ProfileUUID, &uuid, sizeof uuid) != 0)
+	if (uuidInitialized && std::memcmp(ProfileUUID, &uuid, sizeof uuid) != 0 && !config.ignoreUUIDMismatch())
 	{
 		MessageBoxA(csvanilla::ghWnd, "The save file you are loading appears to have been created from a different world.\n"
 			"A new game will be started instead.", "UUID Mismatch", MB_ICONEXCLAMATION | MB_OK);

@@ -16,6 +16,7 @@ private:
 	unsigned short port;
 	bool console;
 	bool enable60fps;
+	bool ignoreUUID;
 	int maxLogLevel;
 	TextSettings textConfig;
 public:
@@ -25,6 +26,7 @@ public:
 	unsigned short serverPort() const { return port; }
 	bool enableConsole() const { return console; }
 	bool use60fps() const { return enable60fps; }
+	bool ignoreUUIDMismatch() const { return ignoreUUID; }
 	int logLevel() const { return maxLogLevel; }
 	const TextSettings& textSettings() const { return textConfig; }
 };
