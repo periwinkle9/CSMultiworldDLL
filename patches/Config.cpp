@@ -16,8 +16,10 @@ constexpr bool DefaultEnableConsole = true;
 constexpr int DefaultLogLevel = 4;
 #endif
 constexpr bool Default60FPS = false;
+constexpr Config::TextSettings DefaultTextSettings{84, 33, 82, -18, RGB(0xFF, 0xFF, 0xFE), RGB(0x11, 0x00, 0x22), false};
 
-Config::Config() : port(DefaultPort), console(DefaultEnableConsole), enable60fps(Default60FPS), maxLogLevel(DefaultLogLevel)
+Config::Config() : port(DefaultPort), console(DefaultEnableConsole), enable60fps(Default60FPS), maxLogLevel(DefaultLogLevel),
+	textConfig{DefaultTextSettings}
 {}
 
 void Config::load(const char* name)
@@ -30,10 +32,25 @@ void Config::load(const char* name)
 		std::string pathString = iniPath.string();
 		const char* pathStr = pathString.c_str();
 		port = GetPrivateProfileIntA("server", "port", DefaultPort, pathStr);
+
+		enable60fps = GetPrivateProfileIntA("config", "60fps", Default60FPS, pathStr);
+		textConfig.textX = GetPrivateProfileIntA("config", "text_x", DefaultTextSettings.textX, pathStr);
+		textConfig.textY = GetPrivateProfileIntA("config", "text_y", DefaultTextSettings.textY, pathStr);
+		textConfig.gitXoff = GetPrivateProfileIntA("config", "git_x_offset", DefaultTextSettings.gitXoff, pathStr);
+		textConfig.gitYoff = GetPrivateProfileIntA("config", "git_y_offset", DefaultTextSettings.gitYoff, pathStr);
+		unsigned textR = GetPrivateProfileIntA("config", "text_color_r", GetRValue(DefaultTextSettings.textColor), pathStr) & 0xFF;
+		unsigned textG = GetPrivateProfileIntA("config", "text_color_g", GetGValue(DefaultTextSettings.textColor), pathStr) & 0xFF;
+		unsigned textB = GetPrivateProfileIntA("config", "text_color_b", GetBValue(DefaultTextSettings.textColor), pathStr) & 0xFF;
+		textConfig.textColor = RGB(textR, textG, textB);
+		unsigned textShadowR = GetPrivateProfileIntA("config", "text_shadow_color_r", GetRValue(DefaultTextSettings.textShadowColor), pathStr) & 0xFF;
+		unsigned textShadowG = GetPrivateProfileIntA("config", "text_shadow_color_g", GetGValue(DefaultTextSettings.textShadowColor), pathStr) & 0xFF;
+		unsigned textShadowB = GetPrivateProfileIntA("config", "text_shadow_color_b", GetBValue(DefaultTextSettings.textShadowColor), pathStr) & 0xFF;
+		textConfig.textShadowColor = RGB(textShadowR, textShadowG, textShadowB);
+		textConfig.drawOverMS2 = GetPrivateProfileIntA("config", "draw_over_ms2", DefaultTextSettings.drawOverMS2, pathStr);
+
 		console = GetPrivateProfileIntA("debug", "show_console", DefaultEnableConsole, pathStr);
 		// Also enable console if "debug" file exists
 		console |= fs::is_regular_file(gamePath / "debug");
-		enable60fps = GetPrivateProfileIntA("config", "60fps", Default60FPS, pathStr);
 		maxLogLevel = GetPrivateProfileIntA("debug", "log_level", DefaultLogLevel, pathStr);
 		if (maxLogLevel < 0)
 			maxLogLevel = 0;

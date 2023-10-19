@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <utility>
 #include "../Logger.h"
+#include "../Config.h"
 #include "doukutsu/draw.h"
 #include "doukutsu/fade.h"
 #include "doukutsu/player.h"
@@ -84,7 +85,7 @@ static bool isMS2Active()
 void TSCExecutor::tick()
 {
 	// Pause when <MS2/<MS3 is active to avoid drawing over it
-	if (activeTextbox && isMS2Active())
+	if (activeTextbox && !config.textSettings().drawOverMS2 && isMS2Active())
 		return;
 
 	switch (mode)
@@ -172,8 +173,8 @@ void TSCExecutor::writeTextToSurface() const
 		if (!textLines[i].empty())
 		{
 			// Draw text with shadow
-			csvanilla::PutText2(0, i * 14 + 1, textLines[i].c_str(), RGB(0x11, 0x00, 0x22), TextSurfaceID);
-			csvanilla::PutText2(0, i * 14, textLines[i].c_str(), RGB(0xFF, 0xFF, 0xFE), TextSurfaceID);
+			csvanilla::PutText2(0, i * 14 + 1, textLines[i].c_str(), config.textSettings().textShadowColor, TextSurfaceID);
+			csvanilla::PutText2(0, i * 14, textLines[i].c_str(), config.textSettings().textColor, TextSurfaceID);
 		}
 }
 
@@ -225,13 +226,13 @@ void TSCExecutor::jumpEvent(int eventNum)
 void TSCExecutor::draw() const
 {
 	// Nothing to draw if not running, no textbox, or <MS2/<MS3 is active in the main parser
-	if (mode == OperationMode::IDLE || !activeTextbox || isMS2Active())
+	if (mode == OperationMode::IDLE || !activeTextbox || (!config.textSettings().drawOverMS2 && isMS2Active()))
 		return;
 	// X and Y coordinates of text and <GIT graphic
-	constexpr int TextX = 84;
-	constexpr int TextY = 33;
-	constexpr int GITX = TextX + 82;
-	constexpr int GITY = TextY - 18;
+	const int TextX = config.textSettings().textX;
+	const int TextY = config.textSettings().textY;
+	const int GITX = TextX + config.textSettings().gitXoff;
+	const int GITY = TextY + config.textSettings().gitYoff;
 	const RECT TextRect = {TextX, TextY, TextX + TextSurfaceRect.right, TextY + TextSurfaceRect.bottom};
 	// Draw text
 	csvanilla::PutBitmap3(&TextRect, TextRect.left, TextRect.top, &TextSurfaceRect, TextSurfaceID);
