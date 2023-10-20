@@ -17,11 +17,9 @@
 #include "doukutsu/flags.h"
 
 using csmulti::RequestQueue;
-namespace
-{
-auto& multiworld = csmulti::Multiworld::getInstance();
-auto& logger = multiworld.logger();
-}
+using csmulti::logger;
+using csmulti::requestQueue;
+using csmulti::tcpServer;
 
 class ConsoleManager
 {
@@ -65,7 +63,7 @@ void ConsoleManager::handleInputs()
 
 		// Handle input
 		isEnterPressed = false;
-		bool prevLoggerStdout = logger.useStdout(false); // Pause console logging while a command is being entered
+		bool prevLoggerStdout = logger().useStdout(false); // Pause console logging while a command is being entered
 
 		std::cout << "Enter command: ";
 		std::string command;
@@ -87,19 +85,19 @@ void ConsoleManager::handleInputs()
 		{
 			if (command[0] == '/')
 				handleCommand(std::move(command));
-			else if (multiworld.requestQueue() != nullptr)
+			else if (requestQueue() != nullptr)
 			{
 				RequestQueue::Request request;
 				request.type = RequestQueue::Request::RequestType::SCRIPT;
 				request.data = std::move(command);
-				multiworld.requestQueue()->push(std::move(request));
+				requestQueue()->push(std::move(request));
 				std::cout << "Command sent." << std::endl;
 			}
 			else
 				std::cout << "Command receiver not initialized" << std::endl;
 		}
 
-		logger.useStdout(prevLoggerStdout);
+		logger().useStdout(prevLoggerStdout);
 	}
 }
 
@@ -110,10 +108,10 @@ void ConsoleManager::handleCommand(std::string command)
 	iss >> cmd;
 	if (cmd == "/kill_server")
 	{
-		if (multiworld.tcpServer() != nullptr)
+		if (tcpServer() != nullptr)
 		{
 			std::cout << "Sending server kill command" << std::endl;
-			multiworld.tcpServer()->forceStop();
+			tcpServer()->forceStop();
 			std::cout << "Killed the server" << std::endl;
 		}
 		else
@@ -134,18 +132,18 @@ void ConsoleManager::handleCommand(std::string command)
 				newLogLevel = 0;
 			else if (newLogLevel > 4)
 				newLogLevel = 4;
-			logger.setLogLevel(static_cast<csmulti::Logger::LogLevel>(newLogLevel));
+			logger().setLogLevel(static_cast<csmulti::Logger::LogLevel>(newLogLevel));
 			std::cout << "Set log level to " << newLogLevel << std::endl;
 		}
 		else
-			std::cout << "Current log level is " << static_cast<int>(logger.getLogLevel()) << std::endl;
+			std::cout << "Current log level is " << static_cast<int>(logger().getLogLevel()) << std::endl;
 	}
 	else if (cmd == "/log_timestamps")
 	{
 		std::string newValueStr;
 		bool newValue;
 		newValue = !(iss >> newValueStr) || newValueStr == "1" || newValueStr == "true";
-		logger.showTimestamps(newValue);
+		logger().showTimestamps(newValue);
 		if (newValue)
 			std::cout << "Enabled log timestamps" << std::endl;
 		else
@@ -173,14 +171,14 @@ ConsoleManager::ConsoleManager() : inputThread{}, mutex{}, cv{}, keyboardHook{nu
 		freopen_s(&dummy, "CONIN$", "r", stdin);
 
 		// Set logger to log to console
-		logger.useStdout(true);
+		logger().useStdout(true);
 
 		// Install keyboard hook
 		keyboardHook = SetWindowsHookExA(WH_KEYBOARD, keyboardHookProc, nullptr, GetCurrentThreadId());
 		if (keyboardHook == nullptr)
 		{
 			std::cerr << "Failed to set keyboard hook! You will be unable to send commands from this console." << std::endl;
-			logger.logWarning("Failed to set keyboard hook for debug console");
+			logger().logWarning("Failed to set keyboard hook for debug console");
 		}
 
 		inputThread = std::thread(std::bind(&ConsoleManager::handleInputs, this));

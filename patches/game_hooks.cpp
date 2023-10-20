@@ -17,8 +17,6 @@ using namespace csmulti;
 namespace
 {
 
-auto& multiworld = Multiworld::getInstance();
-
 using Request = RequestQueue::Request;
 
 void handleRequest(const Request& request)
@@ -26,10 +24,10 @@ void handleRequest(const Request& request)
 	switch (request.type)
 	{
 	case Request::RequestType::SCRIPT:
-		multiworld.tscParser()->runScript(std::any_cast<std::string>(request.data));
+		secondaryTSCParser()->runScript(std::any_cast<std::string>(request.data));
 		break;
 	case Request::RequestType::EVENTNUM:
-		multiworld.tscParser()->runEvent(std::any_cast<int>(request.data));
+		secondaryTSCParser()->runEvent(std::any_cast<int>(request.data));
 		break;
 	}
 }
@@ -37,15 +35,15 @@ void handleRequest(const Request& request)
 // Replaces the call to TextScriptProc() in ModeAction()
 int TextScriptProcWrapper()
 {
-	if (multiworld.tscParser() != nullptr)
+	if (secondaryTSCParser() != nullptr)
 	{
-		if (!multiworld.tscParser()->isRunning())
+		if (!secondaryTSCParser()->isRunning())
 		{
 			Request request;
-			if (multiworld.requestQueue() != nullptr && multiworld.requestQueue()->tryPopTSC(request))
+			if (requestQueue() != nullptr && requestQueue()->tryPopTSC(request))
 				handleRequest(request);
 		}
-		multiworld.tscParser()->tick();
+		secondaryTSCParser()->tick();
 	}
 	// Run vanilla TSC
 	return csvanilla::TextScriptProc();
@@ -55,15 +53,15 @@ int TextScriptProcWrapper()
 void PutTextScriptWrapper()
 {
 	csvanilla::PutTextScript();
-	if (multiworld.tscParser() != nullptr)
-		multiworld.tscParser()->draw();
+	if (secondaryTSCParser() != nullptr)
+		secondaryTSCParser()->draw();
 }
 
 // Replaces the call to SystemTask()
 int SystemTaskWrapper()
 {
-	if (multiworld.requestQueue() != nullptr)
-		multiworld.requestQueue()->fulfillAll();
+	if (requestQueue() != nullptr)
+		requestQueue()->fulfillAll();
 	return csvanilla::SystemTask();
 }
 
@@ -74,37 +72,35 @@ void StartMapping()
 {
 	using csvanilla::gMapping;
 	std::memset(gMapping, 0, sizeof gMapping);
-	const auto& uuid = multiworld.uuid();
-	if (uuid.isInitialized())
-		std::memcpy(ProfileUUID, &uuid.get(), sizeof(IID));
+	if (uuid().isInitialized())
+		std::memcpy(ProfileUUID, &uuid().get(), sizeof(IID));
 }
 
 BOOL LoadProfile(const char* name)
 {
 	if (!csvanilla::LoadProfile(name))
 		return FALSE;
-	const auto& uuid = multiworld.uuid();
-	if (uuid.isInitialized() && std::memcmp(ProfileUUID, &uuid.get(), sizeof(IID)) != 0 && !multiworld.config().ignoreUUIDMismatch())
+	if (uuid().isInitialized() && std::memcmp(ProfileUUID, &uuid().get(), sizeof(IID)) != 0 && !config().ignoreUUIDMismatch())
 	{
 		MessageBoxA(csvanilla::ghWnd, "The save file you are loading appears to have been created from a different world.\n"
 			"A new game will be started instead.", "UUID Mismatch", MB_ICONEXCLAMATION | MB_OK);
 		return FALSE;
 	}
 	// Clear TSC script queue and stop running events on game reset
-	if (multiworld.requestQueue() != nullptr)
-		multiworld.requestQueue()->clearTSCQueue();
-	if (multiworld.tscParser() != nullptr)
-		multiworld.tscParser()->endEvent();
+	if (requestQueue() != nullptr)
+		requestQueue()->clearTSCQueue();
+	if (secondaryTSCParser() != nullptr)
+		secondaryTSCParser()->endEvent();
 	return TRUE;
 }
 
 BOOL InitializeGame(void* hWnd)
 {
 	// Clear TSC script queue and stop running events  on new game
-	if (multiworld.requestQueue() != nullptr)
-		multiworld.requestQueue()->clearTSCQueue();
-	if (multiworld.tscParser() != nullptr)
-		multiworld.tscParser()->endEvent();
+	if (requestQueue() != nullptr)
+		requestQueue()->clearTSCQueue();
+	if (secondaryTSCParser() != nullptr)
+		secondaryTSCParser()->endEvent();
 	return csvanilla::InitializeGame(hWnd);
 }
 
@@ -164,9 +160,9 @@ void patch60fps()
 
 #define MAKE_FUNC(name, args, mode, ...) int name args \
 { \
-	GameMode prevGameMode = multiworld.setGameMode(mode); \
+	GameMode prevGameMode = Multiworld::getInstance().setGameMode(mode); \
 	int ret = csvanilla:: name (__VA_ARGS__); \
-	multiworld.setGameMode(prevGameMode); \
+	Multiworld::getInstance().setGameMode(prevGameMode); \
 	return ret; \
 }
 
@@ -174,7 +170,7 @@ void patch60fps()
 // which also causes issues with using the approach in MAKE_FUNC above
 #define MAKE_GAME_FUNC(name, mode) int name(void* hWnd) \
 { \
-	multiworld.setGameMode(mode); \
+	Multiworld::getInstance().setGameMode(mode); \
 	return csvanilla::name(hWnd); \
 }
 
@@ -195,7 +191,7 @@ MAKE_GAME_FUNC(ModeAction, GameMode::ACTION)
 // Replaces the EndMapData() call when exiting (sets currentGameMode correctly, since the MAKE_GAME_FUNC workaround doesn't do this)
 void DeinitHook()
 {
-	multiworld.setGameMode(GameMode::INIT);
+	Multiworld::getInstance().setGameMode(GameMode::INIT);
 	return csvanilla::EndMapData();
 }
 

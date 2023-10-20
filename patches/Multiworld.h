@@ -23,7 +23,7 @@ private:
 	TSCExecutor* tscParser_;
 	class Server* server_;
 
-	Multiworld() : gameMode_{GameMode::INIT}, config_ {}, logger_{}, uuid_{}, requestQueue_{}, tscParser_{}, server_{} {}
+	Multiworld() : gameMode_{GameMode::INIT}, config_{}, logger_{}, uuid_{}, requestQueue_{}, tscParser_{}, server_{} {}
 public:
 	Multiworld(const Multiworld&) = delete;
 	Multiworld(Multiworld&&) = delete;
@@ -46,4 +46,13 @@ public:
 	TSCExecutor* tscParser() { return tscParser_; }
 	Server* tcpServer() { return server_; }
 };
+
+// These functions are just here to simplify the syntax
+inline const Config& config() { return Multiworld::getInstance().config(); }
+inline Logger& logger() { return Multiworld::getInstance().logger(); }
+inline const UUID& uuid() { return Multiworld::getInstance().uuid(); }
+inline RequestQueue* requestQueue() { return Multiworld::getInstance().requestQueue(); }
+inline TSCExecutor* secondaryTSCParser() { return Multiworld::getInstance().tscParser(); }
+inline Server* tcpServer() { return Multiworld::getInstance().tcpServer(); }
+
 } // end namespace csmulti

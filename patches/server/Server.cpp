@@ -19,15 +19,13 @@ using asio::ip::tcp;
 namespace
 {
 
-auto& logger = csmulti::Multiworld::getInstance().logger();
-
 // All of the ASIO examples that I've seen have this listener function as a free-standing function
 // as opposed to being in a class. I guess I'll follow their example and do the same...
 awaitable<void> listener(tcp::acceptor& acceptor, csmulti::ConnectionManager& connectionManager)
 {
 	while (acceptor.is_open())
 	{
-		logger.logDebug("Awaiting connection");
+		csmulti::logger().logDebug("Awaiting connection");
 		connectionManager.start(std::make_shared<csmulti::Connection>(co_await acceptor.async_accept(asio::use_awaitable), connectionManager));
 	}
 }
@@ -54,14 +52,14 @@ void Server::start(unsigned short port)
 			acceptor.bind(endpoint);
 			acceptor.listen();
 			asio::co_spawn(io_context, listener(acceptor, activeConnections), asio::detached);
-			logger.logInfo(std::format("Starting server on port {}", port));
+			logger().logInfo(std::format("Starting server on port {}", port));
 			isRunning = true;
 			io_context.run();
 		}
 		catch (const std::exception& e)
 		{
 			isRunning = false;
-			logger.logError(std::format("Server terminated due to exception: {}", e.what()));
+			logger().logError(std::format("Server terminated due to exception: {}", e.what()));
 		}
 	});
 }
@@ -70,7 +68,7 @@ void Server::stop()
 {
 	if (isRunning)
 	{
-		logger.logInfo("Server stopping");
+		logger().logInfo("Server stopping");
 		// Post connection stop request
 		asio::post(io_context, [this]() {
 			acceptor.close();
@@ -86,7 +84,7 @@ void Server::forceStop()
 {
 	if (isRunning)
 	{
-		logger.logWarning("Force-stopping server");
+		logger().logWarning("Force-stopping server");
 		io_context.stop(); // Kill the event loop; io_context.run() should return soon after this
 		serverThread.join();
 		isRunning = false;

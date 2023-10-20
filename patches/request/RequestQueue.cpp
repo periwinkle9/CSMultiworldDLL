@@ -10,8 +10,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-static auto& logger = csmulti::Multiworld::getInstance().logger();
-
 namespace csmulti
 {
 void RequestQueue::push(Request request)
@@ -44,7 +42,7 @@ bool RequestQueue::tryPopTSC(Request& poppedRequest)
 
 void RequestQueue::clearTSCQueue()
 {
-	logger.logDebug("Clearing TSC event queue");
+	logger().logDebug("Clearing TSC event queue");
 	std::unique_lock<std::mutex> lock{tscMutex};
 	// Heh, std::queue doesn't have a .clear() member function, so let's just swap it out for an empty container
 	using std::swap;
@@ -69,7 +67,7 @@ static void fulfill(RequestQueue::Request& request)
 			oss << "Acquiring lock to fulfill request for flags: ";
 			for (auto flag : req->flags)
 				oss << flag << ' ';
-			logger.logDebug(oss.str());
+			logger().logDebug(oss.str());
 		}
 		{
 			std::scoped_lock<std::mutex> lock{req->mutex};
@@ -80,7 +78,7 @@ static void fulfill(RequestQueue::Request& request)
 			req->fulfilled = true;
 		}
 		req->cv.notify_one();
-		logger.logDebug("Flag request fulfilled, server thread notified");
+		logger().logDebug("Flag request fulfilled, server thread notified");
 		break;
 	}
 	case RT::MEMREAD:
@@ -89,7 +87,7 @@ static void fulfill(RequestQueue::Request& request)
 		if (req == nullptr)
 			throw std::logic_error("Null request data");
 
-		logger.logDebug(std::format("Acquiring lock to fulfill mem request at {:#x}, {} bytes", req->address, req->numBytes));
+		logger().logDebug(std::format("Acquiring lock to fulfill mem request at {:#x}, {} bytes", req->address, req->numBytes));
 		{
 			std::scoped_lock<std::mutex> lock{req->mutex};
 			req->result.resize(req->numBytes);
@@ -100,7 +98,7 @@ static void fulfill(RequestQueue::Request& request)
 			req->fulfilled = true;
 		}
 		req->cv.notify_one();
-		logger.logDebug("Memory read request fulfilled, server notified");
+		logger().logDebug("Memory read request fulfilled, server notified");
 		break;
 	}
 	case RT::MEMWRITE:
@@ -109,7 +107,7 @@ static void fulfill(RequestQueue::Request& request)
 		if (req == nullptr)
 			throw std::logic_error("Null request data");
 
-		logger.logDebug(std::format("Acquiring lock to fulfilling mem request at {:#x}, {} bytes", req->address, req->bytes.size()));
+		logger().logDebug(std::format("Acquiring lock to fulfilling mem request at {:#x}, {} bytes", req->address, req->bytes.size()));
 		{
 			std::scoped_lock<std::mutex> lock{req->mutex};
 			if (WriteProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(req->address), req->bytes.data(), req->bytes.size(), nullptr))
@@ -119,7 +117,7 @@ static void fulfill(RequestQueue::Request& request)
 			req->fulfilled = true;
 		}
 		req->cv.notify_one();
-		logger.logDebug("Memory write request fulfilled, server notified");
+		logger().logDebug("Memory write request fulfilled, server notified");
 		break;
 	}
 	default:
@@ -144,7 +142,7 @@ void RequestQueue::fulfillAll()
 	}
 	if (!newTSCRequests.empty())
 	{
-		logger.logDebug(std::format("Request handler: Queued {} TSC events for execution", newTSCRequests.size()));
+		logger().logDebug(std::format("Request handler: Queued {} TSC events for execution", newTSCRequests.size()));
 		std::scoped_lock<std::mutex> lock{tscMutex};
 		for (Request& req : newTSCRequests)
 			pendingTSC.push(std::move(req));

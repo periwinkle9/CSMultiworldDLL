@@ -26,12 +26,6 @@
 
 using asio::ip::tcp;
 
-namespace
-{
-auto& multiworld = csmulti::Multiworld::getInstance();
-auto& logger = multiworld.logger();
-}
-
 namespace csmulti
 {
 Connection::Connection(tcp::socket sock, ConnectionManager& manager) :
@@ -40,13 +34,13 @@ Connection::Connection(tcp::socket sock, ConnectionManager& manager) :
 
 void Connection::start()
 {
-	logger.logDebug("Connection established, starting request handler");
+	logger().logDebug("Connection established, starting request handler");
 	asio::co_spawn(socket.get_executor(), [self = shared_from_this()]{ return self->handleRequest(); }, asio::detached);
 }
 
 void Connection::stop()
 {
-	logger.logDebug("Shutting down connection");
+	logger().logDebug("Shutting down connection");
 	socket.shutdown(tcp::socket::shutdown_both);
 	socket.close();
 }
@@ -88,9 +82,9 @@ asio::awaitable<void> Connection::handleRequest()
 				// Warn on unusually large request (bad format?)
 				if (dataSize > 1024 * 1024) // 1 MiB
 				{
-					logger.logWarning(std::format("Received unusually large request of type {:d}, size = {} (wrong format?)",
+					logger().logWarning(std::format("Received unusually large request of type {:d}, size = {} (wrong format?)",
 						request.header[0], dataSize));
-					logger.logWarning("This operation will block forever if this is not the actual amount of data being sent");
+					logger().logWarning("This operation will block forever if this is not the actual amount of data being sent");
 				}
 				request.data.resize(dataSize);
 				co_await asio::async_read(socket, asio::buffer(request.data), asio::use_awaitable);
@@ -102,11 +96,11 @@ asio::awaitable<void> Connection::handleRequest()
 			if (!response.empty())
 				co_await asio::async_write(socket, asio::buffer(response), asio::use_awaitable);
 		}
-		logger.logDebug("Socket is closed");
+		logger().logDebug("Socket is closed");
 	}
 	catch (std::exception& e)
 	{
-		logger.logDebug(std::format("Stopping connection due to exception: {}", e.what()));
+		logger().logDebug(std::format("Stopping connection due to exception: {}", e.what()));
 		connectionManager.stop(shared_from_this());
 	}
 }
@@ -114,7 +108,7 @@ asio::awaitable<void> Connection::handleRequest()
 static std::vector<std::int32_t> parseNumberList(const std::vector<char>& data)
 {
 	if (data.size() % 4 != 0)
-		logger.logWarning(std::format("Received data not a multiple of 4 bytes (size = {}); ignoring the last {} bytes", data.size(), data.size() % 4));
+		logger().logWarning(std::format("Received data not a multiple of 4 bytes (size = {}); ignoring the last {} bytes", data.size(), data.size() % 4));
 	std::vector<std::int32_t> output;
 	output.reserve(data.size() / 4);
 	for (std::vector<char>::size_type i = 0; i + 3 < data.size(); i += 4)
@@ -141,7 +135,7 @@ static std::string getServerInfoString()
 		"max_hp": {}
 	}}
 }})!!";
-	return std::format(outputFormat, API_Version, "freeware", multiworld.uuid().string(),
+	return std::format(outputFormat, API_Version, "freeware", uuid().string(),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gFlagNPC),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gMapping),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gArmsData),
@@ -154,12 +148,12 @@ void Connection::prepareResponse()
 	enum RequestType : unsigned char { HANDSHAKE, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, READ_MEMORY, WRITE_MEMORY, QUERY_GAME_STATE, DISCONNECT = 255 };
 
 	{
-		logger.logInfo(std::format("Received request: type = {:d}, size = {}", request.header[0], request.data.size()));
+		logger().logInfo(std::format("Received request: type = {:d}, size = {}", request.header[0], request.data.size()));
 		std::ostringstream oss;
 		oss << "Raw request data: " << std::hex;
 		for (auto byte : request.data)
 			oss << static_cast<unsigned>(static_cast<unsigned char>(byte)) << ' ';
-		logger.logDebug(oss.str());
+		logger().logDebug(oss.str());
 	}
 
 	auto makeError = [this](std::string_view message, Logger::LogLevel logLevel = Logger::LogLevel::Error) {
@@ -167,7 +161,7 @@ void Connection::prepareResponse()
 		response.push_back(-1);
 		writeInteger<std::uint32_t>(response, message.size());
 		response.insert(response.end(), message.begin(), message.end());
-		logger.log(logLevel, std::string{message});
+		logger().log(logLevel, std::string{message});
 	};
 	response.clear();
 	switch (request.header[0])
@@ -181,14 +175,14 @@ void Connection::prepareResponse()
 		break;
 	}
 	case EXEC_SCRIPT:
-		if (multiworld.requestQueue() != nullptr)
+		if (requestQueue() != nullptr)
 		{
 			RequestQueue::Request event;
 			event.type = RequestQueue::Request::RequestType::SCRIPT;
 			event.data = std::string(request.data.begin(), request.data.end());
 
-			logger.logInfo("Queueing execution of script: " + std::any_cast<std::string>(event.data));
-			multiworld.requestQueue()->push(std::move(event));
+			logger().logInfo("Queueing execution of script: " + std::any_cast<std::string>(event.data));
+			requestQueue()->push(std::move(event));
 
 			response.push_back(EXEC_SCRIPT);
 			response.resize(5);
@@ -208,7 +202,7 @@ void Connection::prepareResponse()
 			oss << "Received request for flags: ";
 			for (std::int32_t flag : flagRequest->flags)
 				oss << flag << ' ';
-			logger.logInfo(oss.str());
+			logger().logInfo(oss.str());
 		}
 
 		response.reserve(flagRequest->flags.size() + 5);
@@ -217,12 +211,12 @@ void Connection::prepareResponse()
 
 		// Submit request and wait for it to be fulfilled
 		flagRequest->fulfilled = false;
-		if (multiworld.requestQueue() != nullptr)
+		if (requestQueue() != nullptr)
 		{
 			RequestQueue::Request req;
 			req.type = RequestQueue::Request::RequestType::FLAGS;
 			req.data = flagRequest;
-			multiworld.requestQueue()->push(std::move(req));
+			requestQueue()->push(std::move(req));
 
 			using namespace std::chrono_literals;
 			std::unique_lock<std::mutex> lock{flagRequest->mutex};
@@ -237,7 +231,7 @@ void Connection::prepareResponse()
 		break;
 	}
 	case QUEUE_EVENTS:
-		if (multiworld.requestQueue() != nullptr)
+		if (requestQueue() != nullptr)
 		{
 			std::vector<std::int32_t> eventList = parseNumberList(request.data);
 			{
@@ -245,7 +239,7 @@ void Connection::prepareResponse()
 				oss << "Queueing execution of events: ";
 				for (std::int32_t event : eventList)
 					oss << event << ' ';
-				logger.logInfo(oss.str());
+				logger().logInfo(oss.str());
 			}
 
 			std::vector<RequestQueue::Request> eventRequests;
@@ -257,7 +251,7 @@ void Connection::prepareResponse()
 				req.data = eventNum;
 				eventRequests.push_back(req);
 			}
-			multiworld.requestQueue()->pushMultiple(eventRequests);
+			requestQueue()->pushMultiple(eventRequests);
 
 			response.push_back(QUEUE_EVENTS);
 			response.resize(5);
@@ -274,7 +268,7 @@ void Connection::prepareResponse()
 			std::shared_ptr<RequestTypes::MemoryReadRequest> memReadReq{new RequestTypes::MemoryReadRequest};
 			memReadReq->address = readInteger<std::uint32_t>(request.data.cbegin());
 			memReadReq->numBytes = readInteger<std::uint16_t>(request.data.cbegin() + 4);
-			logger.logInfo(std::format("Received request for {} bytes of memory starting at address {:#x}", memReadReq->numBytes, memReadReq->address));
+			logger().logInfo(std::format("Received request for {} bytes of memory starting at address {:#x}", memReadReq->numBytes, memReadReq->address));
 			response.push_back(READ_MEMORY);
 			response.push_back(request.data[4]);
 			response.push_back(request.data[5]);
@@ -282,12 +276,12 @@ void Connection::prepareResponse()
 
 			// Submit request and wait for it to be fulfilled
 			memReadReq->fulfilled = false;
-			if (multiworld.requestQueue() != nullptr)
+			if (requestQueue() != nullptr)
 			{
 				RequestQueue::Request req;
 				req.type = RequestQueue::Request::RequestType::MEMREAD;
 				req.data = memReadReq;
-				multiworld.requestQueue()->push(std::move(req));
+				requestQueue()->push(std::move(req));
 
 				using namespace std::chrono_literals;
 				std::unique_lock<std::mutex> lock{memReadReq->mutex};
@@ -315,16 +309,16 @@ void Connection::prepareResponse()
 			response.resize(5);
 			memWriteReq->address = readInteger<std::uint32_t>(request.data.cbegin());
 			memWriteReq->bytes.insert(memWriteReq->bytes.begin(), request.data.begin() + 4, request.data.end());
-			logger.logInfo(std::format("Received request for writing {} bytes of memory starting at address {:#x}", memWriteReq->bytes.size(), memWriteReq->address));
+			logger().logInfo(std::format("Received request for writing {} bytes of memory starting at address {:#x}", memWriteReq->bytes.size(), memWriteReq->address));
 
 			// Submit request and wait for it to be fulfilled
 			memWriteReq->fulfilled = false;
-			if (multiworld.requestQueue() != nullptr)
+			if (requestQueue() != nullptr)
 			{
 				RequestQueue::Request req;
 				req.type = RequestQueue::Request::RequestType::MEMWRITE;
 				req.data = memWriteReq;
-				multiworld.requestQueue()->push(std::move(req));
+				requestQueue()->push(std::move(req));
 
 				using namespace std::chrono_literals;
 				std::unique_lock<std::mutex> lock{memWriteReq->mutex};
@@ -356,7 +350,7 @@ void Connection::prepareResponse()
 		case 0: // Get current execution mode
 			response.push_back(1);
 			response.resize(5);
-			response.push_back(static_cast<char>(multiworld.currentGameMode()));
+			response.push_back(static_cast<char>(Multiworld::getInstance().currentGameMode()));
 			break;
 		case 1: // Get current map (internal) name
 		{
@@ -373,7 +367,7 @@ void Connection::prepareResponse()
 		break;
 	}
 	case DISCONNECT:
-		logger.logInfo("Received disconnect signal; ending connection");
+		logger().logInfo("Received disconnect signal; ending connection");
 		connectionManager.stop(shared_from_this());
 		break;
 	default: // Unknown request! Uh-oh
@@ -384,7 +378,7 @@ void Connection::prepareResponse()
 			oss << "Request data: " << std::hex;
 			for (auto byte : request.data)
 				oss << static_cast<int>(byte) << ' ';
-			logger.logInfo(oss.str());
+			logger().logInfo(oss.str());
 		}
 	}
 }

@@ -13,11 +13,8 @@
 #include "doukutsu/player.h"
 #include "doukutsu/tsc.h"
 
-namespace
-{
-const auto& config = csmulti::Multiworld::getInstance().config();
-auto& logger = csmulti::Multiworld::getInstance().logger();
-}
+using csmulti::config;
+using csmulti::logger;
 
 const RECT TextSurfaceRect = {0, 0, 216, 48};
 
@@ -49,7 +46,7 @@ void TSCExecutor::runScript(std::string script)
 	currentScript = scriptBuffer;
 	currentPos = std::begin(currentScript);
 	mode = OperationMode::RUNNING;
-	logger.logDebug("Now executing script: " + scriptBuffer);
+	logger().logDebug("Now executing script: " + scriptBuffer);
 }
 
 void TSCExecutor::runEvent(int eventNum)
@@ -63,7 +60,7 @@ void TSCExecutor::runEvent(int eventNum)
 void TSCExecutor::endEvent()
 {
 	if (mode != OperationMode::IDLE)
-		logger.logInfo("Stopping parallel TSC parser");
+		logger().logInfo("Stopping parallel TSC parser");
 	resetState();
 	mode = OperationMode::IDLE;
 }
@@ -77,7 +74,7 @@ static bool isMS2Active()
 void TSCExecutor::tick()
 {
 	// Pause when <MS2/<MS3 is active to avoid drawing over it
-	if (activeTextbox && !config.textSettings().drawOverMS2 && isMS2Active())
+	if (activeTextbox && !config().textSettings().drawOverMS2 && isMS2Active())
 		return;
 
 	switch (mode)
@@ -139,10 +136,10 @@ void TSCExecutor::processText()
 	{
 		textLines[currentLine] += newText;
 		if (textLines[currentLine].size() > 43) // Empirically-observed max text line length without cutting off
-			logger.logWarning("Text line too long; it will be cut off");
+			logger().logWarning("Text line too long; it will be cut off");
 	}
 	else
-		logger.logWarning(std::format("Too many text lines (current line = {}), ignoring all text past the 3rd line", currentLine));
+		logger().logWarning(std::format("Too many text lines (current line = {}), ignoring all text past the 3rd line", currentLine));
 	currentPos = textEndPos;
 	updateText = true;
 }
@@ -164,8 +161,8 @@ void TSCExecutor::writeTextToSurface() const
 		if (!textLines[i].empty())
 		{
 			// Draw text with shadow
-			csvanilla::PutText2(0, i * 14 + 1, textLines[i].c_str(), config.textSettings().textShadowColor, TextSurfaceID);
-			csvanilla::PutText2(0, i * 14, textLines[i].c_str(), config.textSettings().textColor, TextSurfaceID);
+			csvanilla::PutText2(0, i * 14 + 1, textLines[i].c_str(), config().textSettings().textShadowColor, TextSurfaceID);
+			csvanilla::PutText2(0, i * 14, textLines[i].c_str(), config().textSettings().textColor, TextSurfaceID);
 		}
 }
 
@@ -205,25 +202,25 @@ void TSCExecutor::jumpEvent(int eventNum)
 		currentScript = std::string_view{eventStart, nextEvent};
 		currentPos = std::begin(currentScript);
 		mode = OperationMode::RUNNING;
-		logger.logDebug(std::format("Now executing event {}", eventNum));
+		logger().logDebug(std::format("Now executing event {}", eventNum));
 	}
 	else
 	{
 		mode = OperationMode::IDLE;
-		logger.logWarning(std::format("Event {} not found, stopping parallel TSC parser", eventNum));
+		logger().logWarning(std::format("Event {} not found, stopping parallel TSC parser", eventNum));
 	}
 }
 
 void TSCExecutor::draw() const
 {
 	// Nothing to draw if not running, no textbox, or <MS2/<MS3 is active in the main parser
-	if (mode == OperationMode::IDLE || !activeTextbox || (!config.textSettings().drawOverMS2 && isMS2Active()))
+	if (mode == OperationMode::IDLE || !activeTextbox || (!config().textSettings().drawOverMS2 && isMS2Active()))
 		return;
 	// X and Y coordinates of text and <GIT graphic
-	const int TextX = config.textSettings().textX;
-	const int TextY = config.textSettings().textY;
-	const int GITX = TextX + config.textSettings().gitXoff;
-	const int GITY = TextY + config.textSettings().gitYoff;
+	const int TextX = config().textSettings().textX;
+	const int TextY = config().textSettings().textY;
+	const int GITX = TextX + config().textSettings().gitXoff;
+	const int GITY = TextY + config().textSettings().gitYoff;
 	const RECT TextRect = {TextX, TextY, TextX + TextSurfaceRect.right, TextY + TextSurfaceRect.bottom};
 	// Draw text
 	csvanilla::PutBitmap3(&TextRect, TextRect.left, TextRect.top, &TextSurfaceRect, TextSurfaceID);
