@@ -14,6 +14,9 @@
 #include "doukutsu/player.h"
 #include "doukutsu/tsc.h"
 
+using csmulti::config;
+using csmulti::logger;
+
 TSCExecutor* secondaryTSCParser;
 
 // Delay initialization of secondary TSC parser to avoid calling the constructor from within DllMain()

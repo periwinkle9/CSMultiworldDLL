@@ -5,6 +5,8 @@
 #include <asio/ip/tcp.hpp>
 #include "ConnectionManager.h"
 
+namespace csmulti
+{
 class Server
 {
 	std::thread serverThread;
@@ -23,6 +25,7 @@ public:
 };
 
 extern Server* tcpServer;
+}
 
 void initServer();
 void endServer();

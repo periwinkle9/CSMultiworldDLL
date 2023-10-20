@@ -5,6 +5,8 @@
 #include <Windows.h>
 #include "doukutsu/window.h"
 
+namespace csmulti
+{
 Config config;
 
 constexpr unsigned short DefaultPort = 5451;
@@ -60,3 +62,4 @@ void Config::load(const char* name)
 		ignoreUUID = GetPrivateProfileIntA("debug", "ignore_uuid_mismatch", DefaultIgnoreUUID, pathStr);
 	}
 }
+} // end namespace csmulti

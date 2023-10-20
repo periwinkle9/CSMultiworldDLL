@@ -12,6 +12,8 @@
 #include "doukutsu/tsc.h"
 #include "doukutsu/window.h"
 
+using namespace csmulti;
+
 namespace
 {
 

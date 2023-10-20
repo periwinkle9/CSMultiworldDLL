@@ -10,19 +10,21 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-RequestQueue* requestQueue;
-
 // Delay initialization of request queue to avoid calling the constructor from within DllMain()
 void initRequestQueue()
 {
-	requestQueue = new RequestQueue;
+	csmulti::requestQueue = new csmulti::RequestQueue;
 }
 void endRequestQueue()
 {
 	// This is called after everything else shuts down, so it should be safe
-	delete requestQueue;
-	requestQueue = nullptr;
+	delete csmulti::requestQueue;
+	csmulti::requestQueue = nullptr;
 }
+
+namespace csmulti
+{
+RequestQueue* requestQueue;
 
 void RequestQueue::push(Request request)
 {
@@ -160,3 +162,4 @@ void RequestQueue::fulfillAll()
 			pendingTSC.push(std::move(req));
 	}
 }
+} // end namespace csmulti

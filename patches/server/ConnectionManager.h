@@ -4,6 +4,8 @@
 #include <set>
 #include "Connection.h"
 
+namespace csmulti
+{
 class ConnectionManager
 {
 	using ConnectionPtr = std::shared_ptr<Connection>;
@@ -30,3 +32,4 @@ public:
 		connectionList.clear();
 	}
 };
+} // end namespace csmulti

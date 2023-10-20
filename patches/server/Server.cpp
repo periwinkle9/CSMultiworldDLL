@@ -17,19 +17,17 @@
 using asio::awaitable;
 using asio::ip::tcp;
 
-Server* tcpServer;
-
 namespace
 {
 
 // All of the ASIO examples that I've seen have this listener function as a free-standing function
 // as opposed to being in a class. I guess I'll follow their example and do the same...
-awaitable<void> listener(tcp::acceptor& acceptor, ConnectionManager& connectionManager)
+awaitable<void> listener(tcp::acceptor& acceptor, csmulti::ConnectionManager& connectionManager)
 {
 	while (acceptor.is_open())
 	{
-		logger.logDebug("Awaiting connection");
-		connectionManager.start(std::make_shared<Connection>(co_await acceptor.async_accept(asio::use_awaitable), connectionManager));
+		csmulti::logger.logDebug("Awaiting connection");
+		connectionManager.start(std::make_shared<csmulti::Connection>(co_await acceptor.async_accept(asio::use_awaitable), connectionManager));
 	}
 }
 
@@ -38,14 +36,19 @@ awaitable<void> listener(tcp::acceptor& acceptor, ConnectionManager& connectionM
 // Delay initialization to avoid calling the constructor in DllMain()
 void initServer()
 {
-	tcpServer = new Server(config.serverPort());
+	csmulti::tcpServer = new csmulti::Server(csmulti::config.serverPort());
 }
 void endServer()
 {
+	using csmulti::tcpServer;
 	tcpServer->stop();
 	delete tcpServer;
 	tcpServer = nullptr;
 }
+
+namespace csmulti
+{
+Server* tcpServer;
 
 Server::Server() : serverThread{}, io_context{}, acceptor{io_context}, activeConnections{}, isRunning{false}
 {}
@@ -103,3 +106,4 @@ void Server::forceStop()
 		isRunning = false;
 	}
 }
+} // end namespace csmulti

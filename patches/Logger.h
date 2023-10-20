@@ -4,6 +4,8 @@
 #include <utility>
 #include <atomic>
 
+namespace csmulti
+{
 class Logger
 {
 public:
@@ -29,3 +31,4 @@ public:
 };
 
 extern Logger logger;
+} // end namespace csmulti

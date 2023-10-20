@@ -7,6 +7,8 @@
 #include <Windows.h>
 #include "Config.h"
 
+namespace csmulti
+{
 Logger logger;
 
 Logger::Logger(LogLevel level) : logLevel{level}, isUsingStdout{false}, isShowingTimestamps{true}
@@ -44,3 +46,4 @@ void Logger::log(LogLevel level, std::string message)
 		std::cout << formatted << std::endl;
 	OutputDebugStringA(formatted.c_str());
 }
+} // end namespace csmulti

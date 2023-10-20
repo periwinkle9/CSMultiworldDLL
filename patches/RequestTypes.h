@@ -6,7 +6,7 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace RequestTypes
+namespace csmulti::RequestTypes
 {
 struct SynchronizedRequest
 {

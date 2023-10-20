@@ -6,8 +6,10 @@
 #include <asio/awaitable.hpp>
 #include <asio/ip/tcp.hpp>
 
+namespace csmulti
+{
 class ConnectionManager;
-class Connection: public std::enable_shared_from_this<Connection>
+class Connection : public std::enable_shared_from_this<Connection>
 {
 	asio::ip::tcp::socket socket;
 	ConnectionManager& connectionManager;
@@ -25,3 +27,4 @@ public:
 	void start();
 	void stop();
 };
+} // end namespace csmulti

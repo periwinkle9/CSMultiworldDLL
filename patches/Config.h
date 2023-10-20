@@ -1,4 +1,7 @@
 #pragma once
+
+namespace csmulti
+{
 class Config
 {
 public:
@@ -32,3 +35,4 @@ public:
 };
 
 extern Config config;
+} // end namespace csmulti

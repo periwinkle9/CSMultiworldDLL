@@ -6,6 +6,8 @@
 #include <mutex>
 #include <any>
 
+namespace csmulti
+{
 class RequestQueue
 {
 public:
@@ -30,6 +32,7 @@ public:
 };
 
 extern RequestQueue* requestQueue;
+} // end namespace csmulti
 
 void initRequestQueue();
 void endRequestQueue();

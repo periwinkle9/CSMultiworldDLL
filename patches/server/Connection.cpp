@@ -28,6 +28,8 @@
 
 using asio::ip::tcp;
 
+namespace csmulti
+{
 Connection::Connection(tcp::socket sock, ConnectionManager& manager) :
 	socket(std::move(sock)), connectionManager(manager), request(), response()
 {}
@@ -35,7 +37,7 @@ Connection::Connection(tcp::socket sock, ConnectionManager& manager) :
 void Connection::start()
 {
 	logger.logDebug("Connection established, starting request handler");
-	asio::co_spawn(socket.get_executor(), [self = shared_from_this()]{return self->handleRequest();}, asio::detached);
+	asio::co_spawn(socket.get_executor(), [self = shared_from_this()]{ return self->handleRequest(); }, asio::detached);
 }
 
 void Connection::stop()
@@ -145,7 +147,7 @@ static std::string getServerInfoString()
 
 void Connection::prepareResponse()
 {
-	enum RequestType: unsigned char {HANDSHAKE, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, READ_MEMORY, WRITE_MEMORY, QUERY_GAME_STATE, DISCONNECT = 255};
+	enum RequestType : unsigned char { HANDSHAKE, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, READ_MEMORY, WRITE_MEMORY, QUERY_GAME_STATE, DISCONNECT = 255 };
 
 	{
 		logger.logInfo(std::format("Received request: type = {:d}, size = {}", request.header[0], request.data.size()));
@@ -180,10 +182,10 @@ void Connection::prepareResponse()
 			RequestQueue::Request event;
 			event.type = RequestQueue::Request::RequestType::SCRIPT;
 			event.data = std::string(request.data.begin(), request.data.end());
-			
+
 			logger.logInfo("Queueing execution of script: " + std::any_cast<std::string>(event.data));
 			requestQueue->push(std::move(event));
-			
+
 			response.push_back(EXEC_SCRIPT);
 			response.resize(5);
 		}
@@ -382,3 +384,4 @@ void Connection::prepareResponse()
 		}
 	}
 }
+} // end namespace csmulti

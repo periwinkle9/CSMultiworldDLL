@@ -8,8 +8,12 @@
 #include <Windows.h>
 #include <objbase.h>
 
+namespace csmulti
+{
 IID uuid;
 bool uuidInitialized = false;
+}
+using namespace csmulti;
 
 void loadUUID()
 {

@@ -22,6 +22,7 @@ void applyPatches()
  */
 void applyPostInitPatches()
 {
+	using namespace csmulti;
 	config.load("settings.ini");
 	if (config.use60fps())
 		patch60fps();

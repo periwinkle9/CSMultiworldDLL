@@ -16,6 +16,10 @@
 #include "server/Server.h"
 #include "doukutsu/flags.h"
 
+using csmulti::logger;
+using csmulti::requestQueue;
+using csmulti::RequestQueue;
+
 class ConsoleManager
 {
 	std::thread inputThread;
@@ -103,10 +107,10 @@ void ConsoleManager::handleCommand(std::string command)
 	iss >> cmd;
 	if (cmd == "/kill_server")
 	{
-		if (tcpServer != nullptr)
+		if (csmulti::tcpServer != nullptr)
 		{
 			std::cout << "Sending server kill command" << std::endl;
-			tcpServer->forceStop();
+			csmulti::tcpServer->forceStop();
 			std::cout << "Killed the server" << std::endl;
 		}
 		else
@@ -127,7 +131,7 @@ void ConsoleManager::handleCommand(std::string command)
 				newLogLevel = 0;
 			else if (newLogLevel > 4)
 				newLogLevel = 4;
-			logger.setLogLevel(static_cast<Logger::LogLevel>(newLogLevel));
+			logger.setLogLevel(static_cast<csmulti::Logger::LogLevel>(newLogLevel));
 			std::cout << "Set log level to " << newLogLevel << std::endl;
 		}
 		else
