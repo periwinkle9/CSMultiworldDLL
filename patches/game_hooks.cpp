@@ -18,8 +18,6 @@ namespace
 {
 
 auto& multiworld = Multiworld::getInstance();
-auto secondaryTSCParser = multiworld.tscParser();
-auto requestQueue = multiworld.requestQueue();
 
 using Request = RequestQueue::Request;
 
@@ -28,10 +26,10 @@ void handleRequest(const Request& request)
 	switch (request.type)
 	{
 	case Request::RequestType::SCRIPT:
-		secondaryTSCParser->runScript(std::any_cast<std::string>(request.data));
+		multiworld.tscParser()->runScript(std::any_cast<std::string>(request.data));
 		break;
 	case Request::RequestType::EVENTNUM:
-		secondaryTSCParser->runEvent(std::any_cast<int>(request.data));
+		multiworld.tscParser()->runEvent(std::any_cast<int>(request.data));
 		break;
 	}
 }
@@ -39,15 +37,15 @@ void handleRequest(const Request& request)
 // Replaces the call to TextScriptProc() in ModeAction()
 int TextScriptProcWrapper()
 {
-	if (secondaryTSCParser != nullptr)
+	if (multiworld.tscParser() != nullptr)
 	{
-		if (!secondaryTSCParser->isRunning())
+		if (!multiworld.tscParser()->isRunning())
 		{
 			Request request;
-			if (requestQueue != nullptr && requestQueue->tryPopTSC(request))
+			if (multiworld.requestQueue() != nullptr && multiworld.requestQueue()->tryPopTSC(request))
 				handleRequest(request);
 		}
-		secondaryTSCParser->tick();
+		multiworld.tscParser()->tick();
 	}
 	// Run vanilla TSC
 	return csvanilla::TextScriptProc();
@@ -57,15 +55,15 @@ int TextScriptProcWrapper()
 void PutTextScriptWrapper()
 {
 	csvanilla::PutTextScript();
-	if (secondaryTSCParser != nullptr)
-		secondaryTSCParser->draw();
+	if (multiworld.tscParser() != nullptr)
+		multiworld.tscParser()->draw();
 }
 
 // Replaces the call to SystemTask()
 int SystemTaskWrapper()
 {
-	if (requestQueue != nullptr)
-		requestQueue->fulfillAll();
+	if (multiworld.requestQueue() != nullptr)
+		multiworld.requestQueue()->fulfillAll();
 	return csvanilla::SystemTask();
 }
 
@@ -93,20 +91,20 @@ BOOL LoadProfile(const char* name)
 		return FALSE;
 	}
 	// Clear TSC script queue and stop running events on game reset
-	if (requestQueue != nullptr)
-		requestQueue->clearTSCQueue();
-	if (secondaryTSCParser != nullptr)
-		secondaryTSCParser->endEvent();
+	if (multiworld.requestQueue() != nullptr)
+		multiworld.requestQueue()->clearTSCQueue();
+	if (multiworld.tscParser() != nullptr)
+		multiworld.tscParser()->endEvent();
 	return TRUE;
 }
 
 BOOL InitializeGame(void* hWnd)
 {
 	// Clear TSC script queue and stop running events  on new game
-	if (requestQueue != nullptr)
-		requestQueue->clearTSCQueue();
-	if (secondaryTSCParser != nullptr)
-		secondaryTSCParser->endEvent();
+	if (multiworld.requestQueue() != nullptr)
+		multiworld.requestQueue()->clearTSCQueue();
+	if (multiworld.tscParser() != nullptr)
+		multiworld.tscParser()->endEvent();
 	return csvanilla::InitializeGame(hWnd);
 }
 

@@ -19,9 +19,8 @@
 using csmulti::RequestQueue;
 namespace
 {
-auto& logger = csmulti::Multiworld::getInstance().logger();
-auto* requestQueue = csmulti::Multiworld::getInstance().requestQueue();
-auto* tcpServer = csmulti::Multiworld::getInstance().tcpServer();
+auto& multiworld = csmulti::Multiworld::getInstance();
+auto& logger = multiworld.logger();
 }
 
 class ConsoleManager
@@ -88,12 +87,12 @@ void ConsoleManager::handleInputs()
 		{
 			if (command[0] == '/')
 				handleCommand(std::move(command));
-			else if (requestQueue != nullptr)
+			else if (multiworld.requestQueue() != nullptr)
 			{
 				RequestQueue::Request request;
 				request.type = RequestQueue::Request::RequestType::SCRIPT;
 				request.data = std::move(command);
-				requestQueue->push(std::move(request));
+				multiworld.requestQueue()->push(std::move(request));
 				std::cout << "Command sent." << std::endl;
 			}
 			else
@@ -111,10 +110,10 @@ void ConsoleManager::handleCommand(std::string command)
 	iss >> cmd;
 	if (cmd == "/kill_server")
 	{
-		if (tcpServer != nullptr)
+		if (multiworld.tcpServer() != nullptr)
 		{
 			std::cout << "Sending server kill command" << std::endl;
-			tcpServer->forceStop();
+			multiworld.tcpServer()->forceStop();
 			std::cout << "Killed the server" << std::endl;
 		}
 		else
