@@ -11,7 +11,7 @@
 #include <stdio.h>
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include "RequestQueue.h"
+#include "request/RequestQueue.h"
 #include "Logger.h"
 #include "server/Server.h"
 #include "doukutsu/flags.h"

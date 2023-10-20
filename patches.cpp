@@ -4,7 +4,7 @@
 #include "patches/Logger.h"
 #include "patches/tsc/TSCExecutor.h"
 #include "patches/server/Server.h"
-#include "patches/RequestQueue.h"
+#include "patches/request/RequestQueue.h"
 #include "patches/game_hooks.h"
 #include "patches/uuid.h"
 #include "doukutsu/misc.h"

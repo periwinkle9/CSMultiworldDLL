@@ -14,8 +14,8 @@
 #include <asio/read.hpp>
 #include <asio/use_awaitable.hpp>
 #include <asio/write.hpp>
-#include "../RequestQueue.h"
-#include "../RequestTypes.h"
+#include "../request/RequestQueue.h"
+#include "../request/RequestTypes.h"
 #include "../Logger.h"
 #include "../game_hooks.h"
 #include "../uuid.h"

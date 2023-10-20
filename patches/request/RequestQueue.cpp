@@ -5,7 +5,7 @@
 #include <sstream>
 #include <format>
 #include <memory>
-#include "Logger.h"
+#include "../Logger.h"
 #include "doukutsu/flags.h"
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>

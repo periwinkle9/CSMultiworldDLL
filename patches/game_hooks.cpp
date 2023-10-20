@@ -1,7 +1,7 @@
 #include "game_hooks.h"
 #include "patch_utils.h"
 #include "tsc/TSCExecutor.h"
-#include "RequestQueue.h"
+#include "request/RequestQueue.h"
 #include "uuid.h"
 #include "Config.h"
 #include "doukutsu/inventory.h"

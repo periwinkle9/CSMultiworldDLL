@@ -36,7 +36,7 @@
     <ClCompile Include="patches\tsc\commands.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="patches\RequestQueue.cpp">
+    <ClCompile Include="patches\request\RequestQueue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="patches\game_hooks.cpp">
@@ -172,7 +172,7 @@
     <ClInclude Include="patches\tsc\TSCExecutor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="patches\RequestQueue.h">
+    <ClInclude Include="patches\request\RequestQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="patches\game_hooks.h">
@@ -190,7 +190,7 @@
     <ClInclude Include="patches\uuid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="patches\RequestTypes.h">
+    <ClInclude Include="patches\request\RequestTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="patches\Logger.h">
