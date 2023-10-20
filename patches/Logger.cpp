@@ -9,8 +9,6 @@
 
 namespace csmulti
 {
-Logger logger;
-
 Logger::Logger(LogLevel level) : logLevel{level}, isUsingStdout{false}, isShowingTimestamps{true}
 {}
 

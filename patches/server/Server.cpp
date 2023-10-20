@@ -10,8 +10,7 @@
 #include <asio/detached.hpp>
 #include <asio/post.hpp>
 #include <asio/use_awaitable.hpp>
-#include "../Logger.h"
-#include "../Config.h"
+#include "../Multiworld.h"
 #include "doukutsu/window.h"
 
 using asio::awaitable;
@@ -20,36 +19,23 @@ using asio::ip::tcp;
 namespace
 {
 
+auto& logger = csmulti::Multiworld::getInstance().logger();
+
 // All of the ASIO examples that I've seen have this listener function as a free-standing function
 // as opposed to being in a class. I guess I'll follow their example and do the same...
 awaitable<void> listener(tcp::acceptor& acceptor, csmulti::ConnectionManager& connectionManager)
 {
 	while (acceptor.is_open())
 	{
-		csmulti::logger.logDebug("Awaiting connection");
+		logger.logDebug("Awaiting connection");
 		connectionManager.start(std::make_shared<csmulti::Connection>(co_await acceptor.async_accept(asio::use_awaitable), connectionManager));
 	}
 }
 
 } // end anonymous namespace
 
-// Delay initialization to avoid calling the constructor in DllMain()
-void initServer()
-{
-	csmulti::tcpServer = new csmulti::Server(csmulti::config.serverPort());
-}
-void endServer()
-{
-	using csmulti::tcpServer;
-	tcpServer->stop();
-	delete tcpServer;
-	tcpServer = nullptr;
-}
-
 namespace csmulti
 {
-Server* tcpServer;
-
 Server::Server() : serverThread{}, io_context{}, acceptor{io_context}, activeConnections{}, isRunning{false}
 {}
 Server::Server(unsigned short port) : Server{}

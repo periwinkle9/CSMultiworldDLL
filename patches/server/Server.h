@@ -23,9 +23,4 @@ public:
 	void stop();
 	void forceStop(); // Just in case
 };
-
-extern Server* tcpServer;
-}
-
-void initServer();
-void endServer();
+} // end namespace csmulti

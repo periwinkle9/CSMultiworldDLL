@@ -7,8 +7,6 @@
 
 namespace csmulti
 {
-Config config;
-
 constexpr unsigned short DefaultPort = 5451;
 #ifdef NDEBUG
 constexpr bool DefaultEnableConsole = false;

@@ -1,9 +1,8 @@
 #include "game_hooks.h"
 #include "patch_utils.h"
+#include "Multiworld.h"
 #include "tsc/TSCExecutor.h"
 #include "request/RequestQueue.h"
-#include "uuid.h"
-#include "Config.h"
 #include "doukutsu/inventory.h"
 #include "doukutsu/map.h"
 #include "doukutsu/misc.h"
@@ -16,6 +15,10 @@ using namespace csmulti;
 
 namespace
 {
+
+auto& multiworld = Multiworld::getInstance();
+auto secondaryTSCParser = multiworld.tscParser();
+auto requestQueue = multiworld.requestQueue();
 
 using Request = RequestQueue::Request;
 
@@ -65,22 +68,24 @@ int SystemTaskWrapper()
 	return csvanilla::SystemTask();
 }
 
-void* ProfileUUID = &csvanilla::gMapping[sizeof csvanilla::gMapping - sizeof uuid]; // Use the last 16 bytes of map flag space
+void* ProfileUUID = &csvanilla::gMapping[sizeof csvanilla::gMapping - sizeof(IID)]; // Use the last 16 bytes of map flag space
 
 // Replacement for vanilla StartMapping()
 void StartMapping()
 {
 	using csvanilla::gMapping;
 	std::memset(gMapping, 0, sizeof gMapping);
-	if (uuidInitialized)
-		std::memcpy(ProfileUUID, &uuid, sizeof uuid);
+	const auto& uuid = multiworld.uuid();
+	if (uuid.isInitialized())
+		std::memcpy(ProfileUUID, &uuid.get(), sizeof(IID));
 }
 
 BOOL LoadProfile(const char* name)
 {
 	if (!csvanilla::LoadProfile(name))
 		return FALSE;
-	if (uuidInitialized && std::memcmp(ProfileUUID, &uuid, sizeof uuid) != 0 && !config.ignoreUUIDMismatch())
+	const auto& uuid = multiworld.uuid();
+	if (uuid.isInitialized() && std::memcmp(ProfileUUID, &uuid.get(), sizeof(IID)) != 0 && !multiworld.config().ignoreUUIDMismatch())
 	{
 		MessageBoxA(csvanilla::ghWnd, "The save file you are loading appears to have been created from a different world.\n"
 			"A new game will be started instead.", "UUID Mismatch", MB_ICONEXCLAMATION | MB_OK);
@@ -158,13 +163,11 @@ void patch60fps()
 	patcher::patchBytes(0x41A57B, timerPatch + 3, 1);
 }
 
-// I hope this is safe to initialize from within DllMain()...
-std::atomic<GameMode> currentGameMode = GameMode::INIT;
 #define MAKE_FUNC(name, args, mode, ...) int name args \
 { \
-	GameMode prevGameMode = currentGameMode.exchange(mode); \
+	GameMode prevGameMode = multiworld.setGameMode(mode); \
 	int ret = csvanilla:: name (__VA_ARGS__); \
-	currentGameMode = prevGameMode; \
+	multiworld.setGameMode(prevGameMode); \
 	return ret; \
 }
 
@@ -172,12 +175,14 @@ std::atomic<GameMode> currentGameMode = GameMode::INIT;
 // which also causes issues with using the approach in MAKE_FUNC above
 #define MAKE_GAME_FUNC(name, mode) int name(void* hWnd) \
 { \
-	currentGameMode = mode; \
+	multiworld.setGameMode(mode); \
 	return csvanilla::name(hWnd); \
 }
 
 namespace
 {
+using GameMode = Multiworld::GameMode;
+
 MAKE_FUNC(ModeOpening, (void* hWnd), GameMode::OPENING, hWnd)
 
 // MSVC's runtime stack frame checks work by saving ESP to ESI before a function call and then checking that ESP was restored correctly after the call.
@@ -191,7 +196,7 @@ MAKE_GAME_FUNC(ModeAction, GameMode::ACTION)
 // Replaces the EndMapData() call when exiting (sets currentGameMode correctly, since the MAKE_GAME_FUNC workaround doesn't do this)
 void DeinitHook()
 {
-	currentGameMode = GameMode::INIT;
+	multiworld.setGameMode(GameMode::INIT);
 	return csvanilla::EndMapData();
 }
 

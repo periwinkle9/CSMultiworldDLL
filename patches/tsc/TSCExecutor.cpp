@@ -7,27 +7,16 @@
 #include <format>
 #include <algorithm>
 #include <utility>
-#include "../Logger.h"
-#include "../Config.h"
+#include "../Multiworld.h"
 #include "doukutsu/draw.h"
 #include "doukutsu/fade.h"
 #include "doukutsu/player.h"
 #include "doukutsu/tsc.h"
 
-using csmulti::config;
-using csmulti::logger;
-
-TSCExecutor* secondaryTSCParser;
-
-// Delay initialization of secondary TSC parser to avoid calling the constructor from within DllMain()
-void initTSC2()
+namespace
 {
-	secondaryTSCParser = new TSCExecutor;
-}
-void endTSC2()
-{
-	delete secondaryTSCParser;
-	secondaryTSCParser = nullptr;
+const auto& config = csmulti::Multiworld::getInstance().config();
+auto& logger = csmulti::Multiworld::getInstance().logger();
 }
 
 const RECT TextSurfaceRect = {0, 0, 216, 48};

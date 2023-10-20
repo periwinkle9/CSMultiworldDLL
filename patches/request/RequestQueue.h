@@ -30,9 +30,4 @@ public:
 	void clearTSCQueue();
 	void fulfillAll();
 };
-
-extern RequestQueue* requestQueue;
 } // end namespace csmulti
-
-void initRequestQueue();
-void endRequestQueue();

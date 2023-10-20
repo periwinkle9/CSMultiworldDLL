@@ -33,6 +33,4 @@ public:
 	int logLevel() const { return maxLogLevel; }
 	const TextSettings& textSettings() const { return textConfig; }
 };
-
-extern Config config;
 } // end namespace csmulti

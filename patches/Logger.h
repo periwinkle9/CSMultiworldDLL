@@ -29,6 +29,4 @@ public:
 	void setLogLevel(LogLevel level) { logLevel = level; }
 	LogLevel getLogLevel() const { return logLevel.load(); }
 };
-
-extern Logger logger;
 } // end namespace csmulti

@@ -16,9 +16,7 @@
 #include <asio/write.hpp>
 #include "../request/RequestQueue.h"
 #include "../request/RequestTypes.h"
-#include "../Logger.h"
-#include "../game_hooks.h"
-#include "../uuid.h"
+#include "../Multiworld.h"
 #include "doukutsu/flags.h"
 #include "doukutsu/inventory.h"
 #include "doukutsu/map.h"
@@ -27,6 +25,12 @@
 #include <Windows.h>
 
 using asio::ip::tcp;
+
+namespace
+{
+auto& multiworld = csmulti::Multiworld::getInstance();
+auto& logger = multiworld.logger();
+}
 
 namespace csmulti
 {
@@ -137,7 +141,7 @@ static std::string getServerInfoString()
 		"max_hp": {}
 	}}
 }})!!";
-	return std::format(outputFormat, API_Version, "freeware", getUUIDString(),
+	return std::format(outputFormat, API_Version, "freeware", multiworld.uuid().string(),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gFlagNPC),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gMapping),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gArmsData),
@@ -177,14 +181,14 @@ void Connection::prepareResponse()
 		break;
 	}
 	case EXEC_SCRIPT:
-		if (requestQueue != nullptr)
+		if (multiworld.requestQueue() != nullptr)
 		{
 			RequestQueue::Request event;
 			event.type = RequestQueue::Request::RequestType::SCRIPT;
 			event.data = std::string(request.data.begin(), request.data.end());
 
 			logger.logInfo("Queueing execution of script: " + std::any_cast<std::string>(event.data));
-			requestQueue->push(std::move(event));
+			multiworld.requestQueue()->push(std::move(event));
 
 			response.push_back(EXEC_SCRIPT);
 			response.resize(5);
@@ -213,12 +217,12 @@ void Connection::prepareResponse()
 
 		// Submit request and wait for it to be fulfilled
 		flagRequest->fulfilled = false;
-		if (requestQueue != nullptr)
+		if (multiworld.requestQueue() != nullptr)
 		{
 			RequestQueue::Request req;
 			req.type = RequestQueue::Request::RequestType::FLAGS;
 			req.data = flagRequest;
-			requestQueue->push(std::move(req));
+			multiworld.requestQueue()->push(std::move(req));
 
 			using namespace std::chrono_literals;
 			std::unique_lock<std::mutex> lock{flagRequest->mutex};
@@ -233,7 +237,7 @@ void Connection::prepareResponse()
 		break;
 	}
 	case QUEUE_EVENTS:
-		if (requestQueue != nullptr)
+		if (multiworld.requestQueue() != nullptr)
 		{
 			std::vector<std::int32_t> eventList = parseNumberList(request.data);
 			{
@@ -253,7 +257,7 @@ void Connection::prepareResponse()
 				req.data = eventNum;
 				eventRequests.push_back(req);
 			}
-			requestQueue->pushMultiple(eventRequests);
+			multiworld.requestQueue()->pushMultiple(eventRequests);
 
 			response.push_back(QUEUE_EVENTS);
 			response.resize(5);
@@ -278,12 +282,12 @@ void Connection::prepareResponse()
 
 			// Submit request and wait for it to be fulfilled
 			memReadReq->fulfilled = false;
-			if (requestQueue != nullptr)
+			if (multiworld.requestQueue() != nullptr)
 			{
 				RequestQueue::Request req;
 				req.type = RequestQueue::Request::RequestType::MEMREAD;
 				req.data = memReadReq;
-				requestQueue->push(std::move(req));
+				multiworld.requestQueue()->push(std::move(req));
 
 				using namespace std::chrono_literals;
 				std::unique_lock<std::mutex> lock{memReadReq->mutex};
@@ -315,12 +319,12 @@ void Connection::prepareResponse()
 
 			// Submit request and wait for it to be fulfilled
 			memWriteReq->fulfilled = false;
-			if (requestQueue != nullptr)
+			if (multiworld.requestQueue() != nullptr)
 			{
 				RequestQueue::Request req;
 				req.type = RequestQueue::Request::RequestType::MEMWRITE;
 				req.data = memWriteReq;
-				requestQueue->push(std::move(req));
+				multiworld.requestQueue()->push(std::move(req));
 
 				using namespace std::chrono_literals;
 				std::unique_lock<std::mutex> lock{memWriteReq->mutex};
@@ -352,7 +356,7 @@ void Connection::prepareResponse()
 		case 0: // Get current execution mode
 			response.push_back(1);
 			response.resize(5);
-			response.push_back(static_cast<char>(currentGameMode.load()));
+			response.push_back(static_cast<char>(multiworld.currentGameMode()));
 			break;
 		case 1: // Get current map (internal) name
 		{

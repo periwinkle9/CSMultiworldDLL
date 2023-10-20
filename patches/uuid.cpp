@@ -10,29 +10,22 @@
 
 namespace csmulti
 {
-IID uuid;
-bool uuidInitialized = false;
-}
-using namespace csmulti;
-
-void loadUUID()
+void UUID::load()
 {
-	if (!uuidInitialized)
+	if (!initialized)
 	{
 		std::filesystem::path uuidPath{csvanilla::gDataPath};
 		uuidPath /= "uuid.txt";
 		std::wifstream ifs{uuidPath};
 		std::wstring line;
 		if (ifs && std::getline(ifs, line) && IIDFromString(line.c_str(), &uuid) == S_OK)
-		{
-			uuidInitialized = true;
-		}
+			initialized = true;
 	}
 }
 
-std::string getUUIDString()
+std::string UUID::string() const
 {
-	if (uuidInitialized)
+	if (initialized)
 	{
 		// Having to use wchar_t here makes it slightly annoying, but whatever
 		wchar_t buf[50] = {};
@@ -43,3 +36,4 @@ std::string getUUIDString()
 	}
 	return std::string{};
 }
+} // end namespace csmulti

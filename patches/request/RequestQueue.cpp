@@ -5,27 +5,15 @@
 #include <sstream>
 #include <format>
 #include <memory>
-#include "../Logger.h"
+#include "../Multiworld.h"
 #include "doukutsu/flags.h"
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-// Delay initialization of request queue to avoid calling the constructor from within DllMain()
-void initRequestQueue()
-{
-	csmulti::requestQueue = new csmulti::RequestQueue;
-}
-void endRequestQueue()
-{
-	// This is called after everything else shuts down, so it should be safe
-	delete csmulti::requestQueue;
-	csmulti::requestQueue = nullptr;
-}
+static auto& logger = csmulti::Multiworld::getInstance().logger();
 
 namespace csmulti
 {
-RequestQueue* requestQueue;
-
 void RequestQueue::push(Request request)
 {
 	std::unique_lock<std::mutex> lock{requestMutex};

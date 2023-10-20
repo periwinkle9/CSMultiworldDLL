@@ -109,6 +109,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="patches\Multiworld.cpp" />
     <ClCompile Include="patches\Config.cpp" />
     <ClCompile Include="dinputdll_proxy.cpp" />
     <ClCompile Include="dllmain.cpp" />
@@ -122,12 +123,13 @@
     <ClCompile Include="patches\uuid.cpp" />
     <ClCompile Include="patch_utils.cpp" />
     <ClCompile Include="patches\tsc\TSCExecutor.cpp" />
-    <ClCompile Include="patches\RequestQueue.cpp" />
+    <ClCompile Include="patches\request\RequestQueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports_msvc.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="patches\Multiworld.h" />
     <ClInclude Include="patches\Config.h" />
     <ClInclude Include="doukutsu\all.h" />
     <ClInclude Include="doukutsu\audio.h" />
@@ -163,7 +165,7 @@
     <ClInclude Include="doukutsu\weapons.h" />
     <ClInclude Include="doukutsu\window.h" />
     <ClInclude Include="patches\Logger.h" />
-    <ClInclude Include="patches\RequestTypes.h" />
+    <ClInclude Include="patches\request\RequestTypes.h" />
     <ClInclude Include="patches\server\Connection.h" />
     <ClInclude Include="patches\server\ConnectionManager.h" />
     <ClInclude Include="patches\console.h" />
@@ -172,7 +174,7 @@
     <ClInclude Include="patches\uuid.h" />
     <ClInclude Include="patch_utils.h" />
     <ClInclude Include="patches\tsc\TSCExecutor.h" />
-    <ClInclude Include="patches\RequestQueue.h" />
+    <ClInclude Include="patches\request\RequestQueue.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

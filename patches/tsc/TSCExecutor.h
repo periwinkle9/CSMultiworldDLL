@@ -39,8 +39,3 @@ public:
 
 	bool isRunning() const { return mode != OperationMode::IDLE; }
 };
-
-extern TSCExecutor* secondaryTSCParser;
-
-void initTSC2();
-void endTSC2();

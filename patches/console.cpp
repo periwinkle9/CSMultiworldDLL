@@ -11,14 +11,18 @@
 #include <stdio.h>
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include "Multiworld.h"
 #include "request/RequestQueue.h"
-#include "Logger.h"
 #include "server/Server.h"
 #include "doukutsu/flags.h"
 
-using csmulti::logger;
-using csmulti::requestQueue;
 using csmulti::RequestQueue;
+namespace
+{
+auto& logger = csmulti::Multiworld::getInstance().logger();
+auto* requestQueue = csmulti::Multiworld::getInstance().requestQueue();
+auto* tcpServer = csmulti::Multiworld::getInstance().tcpServer();
+}
 
 class ConsoleManager
 {
@@ -107,10 +111,10 @@ void ConsoleManager::handleCommand(std::string command)
 	iss >> cmd;
 	if (cmd == "/kill_server")
 	{
-		if (csmulti::tcpServer != nullptr)
+		if (tcpServer != nullptr)
 		{
 			std::cout << "Sending server kill command" << std::endl;
-			csmulti::tcpServer->forceStop();
+			tcpServer->forceStop();
 			std::cout << "Killed the server" << std::endl;
 		}
 		else
