@@ -11,7 +11,7 @@ DEF := exports_mingw.def
 
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
 CXXFLAGS := -std=c++20 -Wall -pedantic-errors -m32 -iquote "$(CURDIR)"
-LDFLAGS := -luuid -lole32 -lwinmm -lshlwapi -static -shared -Wl,--subsystem,windows
+LDFLAGS := -luuid -lole32 -lwinmm -lshlwapi -lws2_32 -lwsock32 -static -shared -Wl,--subsystem,windows
 
 BIN := $(BINDIR)/dinput.dll
 OBJ := $(patsubst %.cpp,$(OBJDIR)/%.o,$(SRC))
@@ -26,8 +26,8 @@ endif
 
 all: release
 release: OFLAGS += -O2 -s
+release: CXXFLAGS += -DNDEBUG
 debug: OFLAGS += -g
-debug: CXXFLAGS += -D_DEBUG
 
 release debug: $(BIN)
 

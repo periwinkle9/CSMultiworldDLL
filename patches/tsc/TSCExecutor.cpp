@@ -129,7 +129,6 @@ void TSCExecutor::processText()
 {
 	if (currentPos == currentScript.end())
 		return;
-	std::size_t size = 1;
 	auto textEndPos = std::next(currentPos);
 	// Stop when reaching a command or newline
 	while (textEndPos != currentScript.end() && *textEndPos != '<' && *textEndPos != '\r' && *textEndPos != '\n')

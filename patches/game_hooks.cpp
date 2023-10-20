@@ -1,4 +1,5 @@
 #include "game_hooks.h"
+#include <cstring>
 #include "patch_utils.h"
 #include "Multiworld.h"
 #include "tsc/TSCExecutor.h"

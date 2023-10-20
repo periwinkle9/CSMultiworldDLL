@@ -129,7 +129,7 @@ static std::string getServerInfoString()
 {
 	constexpr int API_Version = 0;
 	// Manually construct JSON string :')
-	constexpr char outputFormat[] = R"!!({{
+	constexpr std::string_view outputFormat = R"!!({{
 	"api_version": {},
 	"platform": "{}",
 	"uuid": "{}",
