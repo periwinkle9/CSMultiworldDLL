@@ -175,24 +175,18 @@ void Connection::prepareResponse()
 		break;
 	}
 	case EXEC_SCRIPT:
-		if (requestQueue() != nullptr)
-		{
-			RequestQueue::Request event;
-			event.type = RequestQueue::Request::RequestType::SCRIPT;
-			event.data = std::string(request.data.begin(), request.data.end());
+	{
+		RequestQueue::Request event;
+		event.type = RequestQueue::Request::RequestType::SCRIPT;
+		event.data = std::string(request.data.begin(), request.data.end());
 
-			logger().logInfo("Queueing execution of script: " + std::any_cast<std::string>(event.data));
-			requestQueue()->push(std::move(event));
+		logger().logInfo("Queueing execution of script: " + std::any_cast<std::string>(event.data));
+		requestQueue().push(std::move(event));
 
-			response.push_back(EXEC_SCRIPT);
-			response.resize(5);
-		}
-		else
-		{
-			// Request queue not available? That's not good...
-			makeError("[1] Event queue not initialized"); // Send back error status
-		}
+		response.push_back(EXEC_SCRIPT);
+		response.resize(5);
 		break;
+	}
 	case GET_FLAGS:
 	{
 		std::shared_ptr<RequestTypes::FlagRequest> flagRequest{new RequestTypes::FlagRequest};
@@ -211,57 +205,47 @@ void Connection::prepareResponse()
 
 		// Submit request and wait for it to be fulfilled
 		flagRequest->fulfilled = false;
-		if (requestQueue() != nullptr)
-		{
-			RequestQueue::Request req;
-			req.type = RequestQueue::Request::RequestType::FLAGS;
-			req.data = flagRequest;
-			requestQueue()->push(std::move(req));
+		RequestQueue::Request req;
+		req.type = RequestQueue::Request::RequestType::FLAGS;
+		req.data = flagRequest;
+		requestQueue().push(std::move(req));
 
-			using namespace std::chrono_literals;
-			std::unique_lock<std::mutex> lock{flagRequest->mutex};
-			if (flagRequest->cv.wait_for(lock, 1s, [&flagRequest]() -> bool { return flagRequest->fulfilled; }))
-				response.insert(response.end(), flagRequest->result.begin(), flagRequest->result.end());
-			else
-				makeError("[2] Request timed out", Logger::LogLevel::Warning);
-		}
+		using namespace std::chrono_literals;
+		std::unique_lock<std::mutex> lock{flagRequest->mutex};
+		if (flagRequest->cv.wait_for(lock, 1s, [&flagRequest]() -> bool { return flagRequest->fulfilled; }))
+			response.insert(response.end(), flagRequest->result.begin(), flagRequest->result.end());
 		else
-			makeError("[2] Request queue not initialized");
+			makeError("[2] Request timed out", Logger::LogLevel::Warning);
 
 		break;
 	}
 	case QUEUE_EVENTS:
-		if (requestQueue() != nullptr)
+	{
+		std::vector<std::int32_t> eventList = parseNumberList(request.data);
 		{
-			std::vector<std::int32_t> eventList = parseNumberList(request.data);
-			{
-				std::ostringstream oss;
-				oss << "Queueing execution of events: ";
-				for (std::int32_t event : eventList)
-					oss << event << ' ';
-				logger().logInfo(oss.str());
-			}
-
-			std::vector<RequestQueue::Request> eventRequests;
-			eventRequests.reserve(eventList.size());
-			for (auto eventNum : eventList)
-			{
-				RequestQueue::Request req;
-				req.type = RequestQueue::Request::RequestType::EVENTNUM;
-				req.data = eventNum;
-				eventRequests.push_back(req);
-			}
-			requestQueue()->pushMultiple(eventRequests);
-
-			response.push_back(QUEUE_EVENTS);
-			response.resize(5);
+			std::ostringstream oss;
+			oss << "Queueing execution of events: ";
+			for (std::int32_t event : eventList)
+				oss << event << ' ';
+			logger().logInfo(oss.str());
 		}
-		else
+
+		std::vector<RequestQueue::Request> eventRequests;
+		eventRequests.reserve(eventList.size());
+		for (auto eventNum : eventList)
 		{
-			// Request queue not available? That's not good...
-			makeError("[3] Event queue not initialized"); // Send back error status
+			RequestQueue::Request req;
+			req.type = RequestQueue::Request::RequestType::EVENTNUM;
+			req.data = eventNum;
+			eventRequests.push_back(req);
 		}
+		requestQueue().pushMultiple(eventRequests);
+
+		response.push_back(QUEUE_EVENTS);
+		response.resize(5);
+
 		break;
+	}
 	case READ_MEMORY:
 		if (request.data.size() == 6)
 		{
@@ -276,28 +260,23 @@ void Connection::prepareResponse()
 
 			// Submit request and wait for it to be fulfilled
 			memReadReq->fulfilled = false;
-			if (requestQueue() != nullptr)
-			{
-				RequestQueue::Request req;
-				req.type = RequestQueue::Request::RequestType::MEMREAD;
-				req.data = memReadReq;
-				requestQueue()->push(std::move(req));
+			RequestQueue::Request req;
+			req.type = RequestQueue::Request::RequestType::MEMREAD;
+			req.data = memReadReq;
+			requestQueue().push(std::move(req));
 
-				using namespace std::chrono_literals;
-				std::unique_lock<std::mutex> lock{memReadReq->mutex};
-				if (memReadReq->cv.wait_for(lock, 1s, [&memReadReq]() -> bool { return memReadReq->fulfilled; }))
-				{
-					if (memReadReq->errorCode == 0)
-						response.insert(response.end(), memReadReq->result.begin(), memReadReq->result.end());
-					else
-						makeError(std::format("[4] ReadProcessMemory (addr = {:#x}, size = {}) failed: error code {}",
-							memReadReq->address, memReadReq->numBytes, memReadReq->errorCode), Logger::LogLevel::Warning);
-				}
+			using namespace std::chrono_literals;
+			std::unique_lock<std::mutex> lock{memReadReq->mutex};
+			if (memReadReq->cv.wait_for(lock, 1s, [&memReadReq]() -> bool { return memReadReq->fulfilled; }))
+			{
+				if (memReadReq->errorCode == 0)
+					response.insert(response.end(), memReadReq->result.begin(), memReadReq->result.end());
 				else
-					makeError("[4] Request timed out", Logger::LogLevel::Warning);
+					makeError(std::format("[4] ReadProcessMemory (addr = {:#x}, size = {}) failed: error code {}",
+						memReadReq->address, memReadReq->numBytes, memReadReq->errorCode), Logger::LogLevel::Warning);
 			}
 			else
-				makeError("[4] Request queue not initialized");
+				makeError("[4] Request timed out", Logger::LogLevel::Warning);
 		}
 		else
 			makeError(std::format("[4] Unexpected request size (expected 6, received {} bytes)", request.data.size()), Logger::LogLevel::Warning);
@@ -313,28 +292,23 @@ void Connection::prepareResponse()
 
 			// Submit request and wait for it to be fulfilled
 			memWriteReq->fulfilled = false;
-			if (requestQueue() != nullptr)
-			{
-				RequestQueue::Request req;
-				req.type = RequestQueue::Request::RequestType::MEMWRITE;
-				req.data = memWriteReq;
-				requestQueue()->push(std::move(req));
+			RequestQueue::Request req;
+			req.type = RequestQueue::Request::RequestType::MEMWRITE;
+			req.data = memWriteReq;
+			requestQueue().push(std::move(req));
 
-				using namespace std::chrono_literals;
-				std::unique_lock<std::mutex> lock{memWriteReq->mutex};
-				if (memWriteReq->cv.wait_for(lock, 1s, [&memWriteReq]() -> bool { return memWriteReq->fulfilled; }))
-				{
-					if (memWriteReq->errorCode == 0)
-						response[0] = WRITE_MEMORY;
-					else
-						makeError(std::format("[5] WriteProcessMemory (addr = {:#x}, size = {}) failed: error code {}",
-							memWriteReq->address, memWriteReq->bytes.size(), memWriteReq->errorCode), Logger::LogLevel::Warning);
-				}
+			using namespace std::chrono_literals;
+			std::unique_lock<std::mutex> lock{memWriteReq->mutex};
+			if (memWriteReq->cv.wait_for(lock, 1s, [&memWriteReq]() -> bool { return memWriteReq->fulfilled; }))
+			{
+				if (memWriteReq->errorCode == 0)
+					response[0] = WRITE_MEMORY;
 				else
-					makeError("[5] Request timed out", Logger::LogLevel::Warning);
+					makeError(std::format("[5] WriteProcessMemory (addr = {:#x}, size = {}) failed: error code {}",
+						memWriteReq->address, memWriteReq->bytes.size(), memWriteReq->errorCode), Logger::LogLevel::Warning);
 			}
 			else
-				makeError("[5] Request queue not initialized");
+				makeError("[5] Request timed out", Logger::LogLevel::Warning);
 		}
 		else if (request.data.size() == 4)
 			makeError("[5] Requested to write 0 bytes of memory", Logger::LogLevel::Warning);

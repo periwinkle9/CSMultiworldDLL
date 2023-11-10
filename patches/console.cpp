@@ -12,7 +12,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include "Multiworld.h"
-#include "request/RequestQueue.h"
 #include "server/Server.h"
 #include "doukutsu/flags.h"
 
@@ -85,16 +84,11 @@ void ConsoleManager::handleInputs()
 		{
 			if (command[0] == '/')
 				handleCommand(std::move(command));
-			else if (requestQueue() != nullptr)
-			{
-				RequestQueue::Request request;
-				request.type = RequestQueue::Request::RequestType::SCRIPT;
-				request.data = std::move(command);
-				requestQueue()->push(std::move(request));
-				std::cout << "Command sent." << std::endl;
-			}
-			else
-				std::cout << "Command receiver not initialized" << std::endl;
+			RequestQueue::Request request;
+			request.type = RequestQueue::Request::RequestType::SCRIPT;
+			request.data = std::move(command);
+			requestQueue().push(std::move(request));
+			std::cout << "Command sent." << std::endl;
 		}
 
 		logger().useStdout(prevLoggerStdout);
@@ -170,15 +164,11 @@ ConsoleManager::ConsoleManager() : inputThread{}, mutex{}, cv{}, keyboardHook{nu
 		freopen_s(&dummy, "CONOUT$", "w", stderr);
 		freopen_s(&dummy, "CONIN$", "r", stdin);
 
-		// Set logger to log to console
-		logger().useStdout(true);
-
 		// Install keyboard hook
 		keyboardHook = SetWindowsHookExA(WH_KEYBOARD, keyboardHookProc, nullptr, GetCurrentThreadId());
 		if (keyboardHook == nullptr)
 		{
 			std::cerr << "Failed to set keyboard hook! You will be unable to send commands from this console." << std::endl;
-			logger().logWarning("Failed to set keyboard hook for debug console");
 		}
 
 		inputThread = std::thread(std::bind(&ConsoleManager::handleInputs, this));

@@ -6,7 +6,7 @@
 // Initialization function called when the DLL is first loaded
 void applyPatches()
 {
-	patcher::setupPostInitHook();
+	//patcher::setupPostInitHook();
 	patcher::setupCleanupHook();
 	applyGameHooks();
 }
@@ -16,10 +16,6 @@ void applyPatches()
  */
 void applyPostInitPatches()
 {
-	auto& multiworld = csmulti::Multiworld::getInstance();
-	multiworld.init();
-	if (multiworld.config().use60fps())
-		patch60fps();
 }
 
 /* If patcher::setupCleanupHook() is called above, then this function will be called

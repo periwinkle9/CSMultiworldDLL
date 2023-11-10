@@ -24,10 +24,10 @@ void handleRequest(const Request& request)
 	switch (request.type)
 	{
 	case Request::RequestType::SCRIPT:
-		secondaryTSCParser()->runScript(std::any_cast<std::string>(request.data));
+		secondaryTSCParser().runScript(std::any_cast<std::string>(request.data));
 		break;
 	case Request::RequestType::EVENTNUM:
-		secondaryTSCParser()->runEvent(std::any_cast<int>(request.data));
+		secondaryTSCParser().runEvent(std::any_cast<int>(request.data));
 		break;
 	}
 }
@@ -35,16 +35,13 @@ void handleRequest(const Request& request)
 // Replaces the call to TextScriptProc() in ModeAction()
 int TextScriptProcWrapper()
 {
-	if (secondaryTSCParser() != nullptr)
+	if (!secondaryTSCParser().isRunning())
 	{
-		if (!secondaryTSCParser()->isRunning())
-		{
-			Request request;
-			if (requestQueue() != nullptr && requestQueue()->tryPopTSC(request))
-				handleRequest(request);
-		}
-		secondaryTSCParser()->tick();
+		Request request;
+		if (requestQueue().tryPopTSC(request))
+			handleRequest(request);
 	}
+	secondaryTSCParser().tick();
 	// Run vanilla TSC
 	return csvanilla::TextScriptProc();
 }
@@ -53,15 +50,13 @@ int TextScriptProcWrapper()
 void PutTextScriptWrapper()
 {
 	csvanilla::PutTextScript();
-	if (secondaryTSCParser() != nullptr)
-		secondaryTSCParser()->draw();
+	secondaryTSCParser().draw();
 }
 
 // Replaces the call to SystemTask()
 int SystemTaskWrapper()
 {
-	if (requestQueue() != nullptr)
-		requestQueue()->fulfillAll();
+	requestQueue().fulfillAll();
 	return csvanilla::SystemTask();
 }
 
@@ -87,20 +82,16 @@ BOOL LoadProfile(const char* name)
 		return FALSE;
 	}
 	// Clear TSC script queue and stop running events on game reset
-	if (requestQueue() != nullptr)
-		requestQueue()->clearTSCQueue();
-	if (secondaryTSCParser() != nullptr)
-		secondaryTSCParser()->endEvent();
+	requestQueue().clearTSCQueue();
+	secondaryTSCParser().endEvent();
 	return TRUE;
 }
 
 BOOL InitializeGame(void* hWnd)
 {
 	// Clear TSC script queue and stop running events  on new game
-	if (requestQueue() != nullptr)
-		requestQueue()->clearTSCQueue();
-	if (secondaryTSCParser() != nullptr)
-		secondaryTSCParser()->endEvent();
+	requestQueue().clearTSCQueue();
+	secondaryTSCParser().endEvent();
 	return csvanilla::InitializeGame(hWnd);
 }
 
