@@ -172,7 +172,7 @@ void TSCExecutor::jumpEvent(int eventNum)
 	clearText();
 	wait = 0; // I don't know if resetting this is necessary, but let's do it anyways just to be safe
 	// Look for event in vanilla script
-	const int TSC_BUFFER_SIZE = 0x5000; // Vanilla TSC buffer allocation size
+	const int TSC_BUFFER_SIZE = csvanilla::gTS.size;
 	const char* const tscBuffer = csvanilla::gTS.data;
 	const char* eventStart = tscBuffer;
 	bool found = false;
