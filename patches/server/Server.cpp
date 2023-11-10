@@ -10,8 +10,8 @@
 #include <asio/detached.hpp>
 #include <asio/post.hpp>
 #include <asio/use_awaitable.hpp>
+#include <asio/ip/address_v4.hpp>
 #include "../Multiworld.h"
-#include "doukutsu/window.h"
 
 using asio::awaitable;
 using asio::ip::tcp;
@@ -46,7 +46,7 @@ void Server::start(unsigned short port)
 	serverThread = std::thread([this, port]() {
 		try
 		{
-			tcp::endpoint endpoint{tcp::v4(), port};
+			tcp::endpoint endpoint{asio::ip::address_v4::loopback(), port};
 			acceptor.open(endpoint.protocol());
 			acceptor.set_option(tcp::acceptor::reuse_address(true));
 			acceptor.bind(endpoint);
