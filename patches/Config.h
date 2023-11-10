@@ -17,6 +17,8 @@ public:
 	};
 private:
 	unsigned short port;
+	bool server;
+	bool enableServerIfSolo;
 	bool console;
 	bool enable60fps;
 	bool ignoreUUID;
@@ -27,6 +29,8 @@ public:
 	void load(const char* name);
 
 	unsigned short serverPort() const { return port; }
+	bool enableServer() const { return server; }
+	bool enableServerInSolo() const { return enableServerIfSolo; }
 	bool enableConsole() const { return console; }
 	bool use60fps() const { return enable60fps; }
 	bool ignoreUUIDMismatch() const { return ignoreUUID; }

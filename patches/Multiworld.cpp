@@ -5,6 +5,17 @@
 #include "console.h"
 #include "game_hooks.h"
 
+static bool isSoloModeUUID(const IID& uuid)
+{
+	// UUID is always {00000000-0000-1111-0000-000000000000} for solo mode seeds
+	if (uuid.Data1 != 0 || uuid.Data2 != 0 || uuid.Data3 != 0x1111)
+		return false;
+	for (int i = 0; i < 8; ++i)
+		if (uuid.Data4[i] != 0)
+			return false;
+	return true;
+}
+
 namespace csmulti
 {
 void Multiworld::init()
@@ -19,7 +30,16 @@ void Multiworld::init()
 	}
 	if (config_.use60fps())
 		patch60fps();
-	server_ = new Server{config_.serverPort()};
+
+	if (config_.enableServer())
+	{
+		if (!(isSoloModeUUID(uuid_.get()) && !config_.enableServerInSolo()))
+			server_ = new Server{config_.serverPort()};
+		else
+			logger_.logInfo("Server disabled due to solo mode seed and disable_if_solo_seed=1");
+	}
+	else
+		logger_.logInfo("Server disabled due to start_server=0");
 }
 void Multiworld::deinit()
 {

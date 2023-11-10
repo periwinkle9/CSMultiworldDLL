@@ -8,6 +8,8 @@
 namespace csmulti
 {
 constexpr unsigned short DefaultPort = 5451;
+constexpr bool DefaultEnableServer = true;
+constexpr bool DefaultEnableSoloServer = true;
 #ifdef NDEBUG
 constexpr bool DefaultEnableConsole = false;
 constexpr int DefaultLogLevel = 1;
@@ -19,7 +21,8 @@ constexpr bool Default60FPS = false;
 constexpr bool DefaultIgnoreUUID = false;
 constexpr Config::TextSettings DefaultTextSettings{84, 33, 82, -18, RGB(0xFF, 0xFF, 0xFE), RGB(0x11, 0x00, 0x22), false};
 
-Config::Config() : port(DefaultPort), console(DefaultEnableConsole), enable60fps(Default60FPS), ignoreUUID(DefaultIgnoreUUID),
+Config::Config() : port(DefaultPort), server(DefaultEnableServer), enableServerIfSolo(DefaultEnableSoloServer),
+	console(DefaultEnableConsole), enable60fps(Default60FPS), ignoreUUID(DefaultIgnoreUUID),
 	maxLogLevel(DefaultLogLevel), textConfig{DefaultTextSettings}
 {}
 
@@ -33,6 +36,8 @@ void Config::load(const char* name)
 		std::string pathString = iniPath.string();
 		const char* pathStr = pathString.c_str();
 		port = GetPrivateProfileIntA("server", "port", DefaultPort, pathStr);
+		server = GetPrivateProfileIntA("server", "start_server", DefaultEnableServer, pathStr);
+		enableServerIfSolo = !GetPrivateProfileIntA("server", "disable_if_solo_seed", !DefaultEnableSoloServer, pathStr);
 
 		enable60fps = GetPrivateProfileIntA("config", "60fps", Default60FPS, pathStr);
 		textConfig.textX = GetPrivateProfileIntA("config", "text_x", DefaultTextSettings.textX, pathStr);
