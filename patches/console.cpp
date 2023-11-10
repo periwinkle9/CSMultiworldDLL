@@ -135,6 +135,37 @@ void ConsoleManager::handleCommand(std::string command)
 		else
 			std::cout << "Current log level is " << static_cast<int>(logger().getLogLevel()) << std::endl;
 	}
+	else if (cmd == "/log_file")
+	{
+		bool currentSetting = logger().isLoggingToFile();
+		std::string newValueStr;
+		if (iss >> newValueStr)
+		{
+			bool newValue = newValueStr == "1" || newValueStr == "true";
+			if (newValue)
+			{
+				if (currentSetting)
+					std::cout << "Logging to file is already enabled" << std::endl;
+				else
+				{
+					logger().logToFile(true);
+					std::cout << "Logging to file enabled" << std::endl;
+				}
+			}
+			else
+			{
+				if (currentSetting)
+				{
+					logger().logToFile(false);
+					std::cout << "Logging to file disabled" << std::endl;
+				}
+				else
+					std::cout << "Logging to file is already disabled" << std::endl;
+			}
+		}
+		else
+			std::cout << "Logging to file is currently " << (currentSetting ? "enabled" : "disabled") << std::endl;
+	}
 	else if (cmd == "/log_timestamps")
 	{
 		std::string newValueStr;

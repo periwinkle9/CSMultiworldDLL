@@ -1,8 +1,10 @@
 #pragma once
 
+#include <fstream>
 #include <string>
 #include <utility>
 #include <atomic>
+#include <mutex>
 
 namespace csmulti
 {
@@ -11,8 +13,11 @@ class Logger
 public:
 	enum class LogLevel { None, Error, Warning, Info, Debug };
 private:
+	std::ofstream logFile;
+	std::mutex mutex;
 	std::atomic<LogLevel> logLevel;
 	std::atomic_bool isUsingStdout;
+	std::atomic_bool isUsingLogFile;
 	std::atomic_bool isShowingTimestamps;
 
 public:
@@ -25,7 +30,9 @@ public:
 	void logDebug(std::string message) { log(LogLevel::Debug, std::move(message)); }
 
 	bool useStdout(bool use) { bool old = isUsingStdout.exchange(use); return old; }
-	bool showTimestamps(bool show) { bool old = isShowingTimestamps.exchange(show); return old; }
+	void logToFile(bool log);
+	bool isLoggingToFile() const { return isUsingLogFile.load(); }
+	void showTimestamps(bool show) { isShowingTimestamps = show; }
 	void setLogLevel(LogLevel level) { logLevel = level; }
 	LogLevel getLogLevel() const { return logLevel.load(); }
 };

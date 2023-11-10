@@ -18,11 +18,12 @@ constexpr bool DefaultEnableConsole = true;
 constexpr int DefaultLogLevel = 4;
 #endif
 constexpr bool Default60FPS = false;
+constexpr bool DefaultLogToFile = false;
 constexpr bool DefaultIgnoreUUID = false;
 constexpr Config::TextSettings DefaultTextSettings{84, 33, 82, -18, RGB(0xFF, 0xFF, 0xFE), RGB(0x11, 0x00, 0x22), false};
 
 Config::Config() : port(DefaultPort), server(DefaultEnableServer), enableServerIfSolo(DefaultEnableSoloServer),
-	console(DefaultEnableConsole), enable60fps(Default60FPS), ignoreUUID(DefaultIgnoreUUID),
+	console(DefaultEnableConsole), enable60fps(Default60FPS), logFile(DefaultLogToFile), ignoreUUID(DefaultIgnoreUUID),
 	maxLogLevel(DefaultLogLevel), textConfig{DefaultTextSettings}
 {}
 
@@ -62,6 +63,7 @@ void Config::load(const char* name)
 			maxLogLevel = 0;
 		else if (maxLogLevel > 4)
 			maxLogLevel = 4;
+		logFile = GetPrivateProfileIntA("debug", "log_to_file", DefaultLogToFile, pathStr);
 		ignoreUUID = GetPrivateProfileIntA("debug", "ignore_uuid_mismatch", DefaultIgnoreUUID, pathStr);
 	}
 }

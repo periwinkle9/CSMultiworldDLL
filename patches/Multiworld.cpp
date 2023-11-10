@@ -23,6 +23,7 @@ void Multiworld::init()
 {
 	config_.load("settings.ini");
 	logger_.setLogLevel(static_cast<Logger::LogLevel>(config_.logLevel()));
+	logger_.logToFile(config_.logToFile());
 	uuid_.load();
 	if (config_.enableConsole())
 	{

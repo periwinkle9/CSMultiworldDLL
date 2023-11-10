@@ -34,6 +34,8 @@ OOB TSC values must be converted into their integer value)
 current log level if called with no argument. Log message with a level greater
 than the current log level will no longer be displayed. (Valid log levels are 0-4,
 inclusive.)
+* `/log_file [0|1]` disables or enables logging to `log.txt`. If called with no argument,
+it displays whether logging to file is currently enabled or not.
 * `/log_timestamps <0|1>` disables or enables timestamp logging. (Timestamps are shown
 in UTC time.)
 * `/kill_server` force-kills the TCP server. Currently, it cannot be restarted aside

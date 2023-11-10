@@ -9,7 +9,7 @@
 
 namespace csmulti
 {
-Logger::Logger(LogLevel level) : logLevel{level}, isUsingStdout{false}, isShowingTimestamps{true}
+Logger::Logger(LogLevel level) : logFile{}, mutex{}, logLevel{level}, isUsingStdout{false}, isShowingTimestamps{true}
 {}
 
 void Logger::log(LogLevel level, std::string message)
@@ -40,8 +40,27 @@ void Logger::log(LogLevel level, std::string message)
 	else
 		formatted = std::format("{} {}", tag, message);
 
-	if (isUsingStdout)
-		std::cout << formatted << std::endl;
-	OutputDebugStringA(formatted.c_str());
+	{
+		std::scoped_lock lock{mutex};
+		if (isUsingStdout)
+			std::cout << formatted << std::endl;
+		if (isUsingLogFile)
+			logFile << formatted << std::endl;
+		OutputDebugStringA(formatted.c_str());
+	}
+}
+
+void Logger::logToFile(bool log)
+{
+	if (log)
+	{
+		if (logFile.is_open())
+			logWarning("Logger::logToFile(true) called but logger is already logging to file");
+		else
+			logFile.open("log.txt", std::ios::app);
+	}
+	else if (logFile.is_open())
+		logFile.close();
+	isUsingLogFile = log;
 }
 } // end namespace csmulti

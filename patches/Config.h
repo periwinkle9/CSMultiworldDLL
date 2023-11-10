@@ -21,6 +21,7 @@ private:
 	bool enableServerIfSolo;
 	bool console;
 	bool enable60fps;
+	bool logFile;
 	bool ignoreUUID;
 	int maxLogLevel;
 	TextSettings textConfig;
@@ -33,6 +34,7 @@ public:
 	bool enableServerInSolo() const { return enableServerIfSolo; }
 	bool enableConsole() const { return console; }
 	bool use60fps() const { return enable60fps; }
+	bool logToFile() const { return logFile; }
 	bool ignoreUUIDMismatch() const { return ignoreUUID; }
 	int logLevel() const { return maxLogLevel; }
 	const TextSettings& textSettings() const { return textConfig; }
