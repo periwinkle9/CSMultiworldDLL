@@ -84,11 +84,14 @@ void ConsoleManager::handleInputs()
 		{
 			if (command[0] == '/')
 				handleCommand(std::move(command));
-			RequestQueue::Request request;
-			request.type = RequestQueue::Request::RequestType::SCRIPT;
-			request.data = std::move(command);
-			requestQueue().push(std::move(request));
-			std::cout << "Command sent." << std::endl;
+			else
+			{
+				RequestQueue::Request request;
+				request.type = RequestQueue::Request::RequestType::SCRIPT;
+				request.data = std::move(command);
+				requestQueue().push(std::move(request));
+				std::cout << "Command sent." << std::endl;
+			}
 		}
 
 		logger().useStdout(prevLoggerStdout);
