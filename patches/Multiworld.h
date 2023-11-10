@@ -22,20 +22,21 @@ private:
 	// Keeping this as a pointer for flexibility (lifetime of server = lifetime of object)
 	class Server* server_;
 
+	// Allocating on heap instead of statically to avoid calling the destructor in DllMain()
+	static Multiworld* instance;
 	void init();
+	void deinit();
 	Multiworld() : gameMode_{GameMode::INIT}, config_{}, logger_{}, uuid_{}, requestQueue_{}, tscParser_{}, server_{} { init(); }
 public:
 	Multiworld(const Multiworld&) = delete;
 	Multiworld(Multiworld&&) = delete;
 	Multiworld& operator=(const Multiworld&) = delete;
 	Multiworld& operator=(Multiworld&&) = delete;
-	// Because this is a DLL, initialization and deinitialization is best done outside of DllMain(),
-	// so I can't use the destructor here
-	~Multiworld() = default;
-	void deinit();
-
-	// NOTE: DO NOT CALL FROM WITHIN DllMain()!
-	static Multiworld& getInstance() { static Multiworld instance; return instance; }
+	~Multiworld() { deinit(); }
+	// Because this is a DLL, initialization and deinitialization are best done outside of DllMain().
+	// Hence, these functions are used to manage the lifetime of the Multiworld instance.
+	static Multiworld& getInstance() { static Multiworld* runOnce = (instance = new Multiworld); return *instance; }
+	static void end() { delete instance; instance = nullptr; }
 
 	GameMode currentGameMode() const { return gameMode_.load(); }
 	GameMode setGameMode(GameMode newMode) { return gameMode_.exchange(newMode); }

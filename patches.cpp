@@ -23,5 +23,5 @@ void applyPostInitPatches()
 */
 void cleanup()
 {
-	csmulti::Multiworld::getInstance().deinit();
+	csmulti::Multiworld::end();
 }

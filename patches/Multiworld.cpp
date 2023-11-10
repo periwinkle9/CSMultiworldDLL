@@ -18,6 +18,7 @@ static bool isSoloModeUUID(const IID& uuid)
 
 namespace csmulti
 {
+Multiworld* Multiworld::instance = nullptr;
 void Multiworld::init()
 {
 	config_.load("settings.ini");
