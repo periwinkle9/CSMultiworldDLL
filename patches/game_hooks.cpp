@@ -1,5 +1,7 @@
 #include "game_hooks.h"
 #include <cstring>
+#include <string>
+#include <stdexcept>
 #include "patch_utils.h"
 #include "Multiworld.h"
 #include "tsc/TSCExecutor.h"
@@ -56,7 +58,16 @@ void PutTextScriptWrapper()
 // Replaces the call to SystemTask()
 int SystemTaskWrapper()
 {
-	requestQueue().fulfillAll();
+	try
+	{
+		requestQueue().fulfillAll();
+	}
+	catch (const std::exception& e)
+	{
+		using namespace std::string_literals;
+		logger().logError("Request handler threw exception: "s + e.what());
+		return 0;
+	}
 	return csvanilla::SystemTask();
 }
 

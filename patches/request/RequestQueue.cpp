@@ -14,15 +14,50 @@ namespace csmulti
 {
 void RequestQueue::push(Request request)
 {
-	std::unique_lock<std::mutex> lock{requestMutex};
-	pendingRequests.push(std::move(request));
+	using RT = Request::RequestType;
+	switch (request.type)
+	{
+	case RT::SCRIPT:
+	case RT::EVENTNUM:
+	{
+		std::scoped_lock lock{tscMutex};
+		pendingTSC.push(std::move(request));
+		break;
+	}
+	case RT::FLAGS:
+	case RT::MEMREAD:
+	case RT::MEMWRITE:
+	{
+		std::scoped_lock lock{requestMutex};
+		pendingRequests.push(std::move(request));
+		break;
+	}
+	default:
+		throw std::logic_error("Unrecognized request type");
+	}
 }
 
 void RequestQueue::pushMultiple(const std::vector<Request>& requests)
 {
-	std::unique_lock<std::mutex> lock{requestMutex};
+	std::scoped_lock lock{requestMutex, tscMutex};
 	for (const Request& request : requests)
-		pendingRequests.push(request);
+	{
+		using RT = Request::RequestType;
+		switch (request.type)
+		{
+		case RT::SCRIPT:
+		case RT::EVENTNUM:
+			pendingTSC.push(request);
+			break;
+		case RT::FLAGS:
+		case RT::MEMREAD:
+		case RT::MEMWRITE:
+			pendingRequests.push(request);
+			break;
+		default:
+			throw std::logic_error("Unrecognized request type");
+		}
+	}
 }
 
 bool RequestQueue::tryPopTSC(Request& poppedRequest)
@@ -127,25 +162,12 @@ static void fulfill(RequestQueue::Request& request)
 
 void RequestQueue::fulfillAll()
 {
-	std::vector<Request> newTSCRequests;
+	std::scoped_lock lock{requestMutex};
+	while (!pendingRequests.empty())
 	{
-		std::scoped_lock<std::mutex> lock{requestMutex};
-		while (!pendingRequests.empty())
-		{
-			Request request = std::move(pendingRequests.front());
-			pendingRequests.pop();
-			if (request.type == Request::RequestType::SCRIPT || request.type == Request::RequestType::EVENTNUM)
-				newTSCRequests.push_back(std::move(request));
-			else
-				fulfill(request);
-		}
-	}
-	if (!newTSCRequests.empty())
-	{
-		logger().logDebug(std::format("Request handler: Queued {} TSC events for execution", newTSCRequests.size()));
-		std::scoped_lock<std::mutex> lock{tscMutex};
-		for (Request& req : newTSCRequests)
-			pendingTSC.push(std::move(req));
+		Request request = std::move(pendingRequests.front());
+		pendingRequests.pop();
+		fulfill(request);
 	}
 }
 } // end namespace csmulti
