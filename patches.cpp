@@ -6,7 +6,7 @@
 // Initialization function called when the DLL is first loaded
 void applyPatches()
 {
-	//patcher::setupPostInitHook();
+	patcher::setupPostInitHook();
 	patcher::setupCleanupHook();
 	applyGameHooks();
 	// Increase TSC buffer size (temporary fix until the scripts themselves are revised to fit within the vanilla limit)
@@ -19,6 +19,8 @@ void applyPatches()
  */
 void applyPostInitPatches()
 {
+	if (csmulti::config().use60fps())
+		patch60fps();
 }
 
 /* If patcher::setupCleanupHook() is called above, then this function will be called

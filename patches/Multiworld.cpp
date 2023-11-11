@@ -3,7 +3,6 @@
 #include "server/Server.h"
 #include "tsc/TSCExecutor.h"
 #include "console.h"
-#include "game_hooks.h"
 
 static bool isSoloModeUUID(const IID& uuid)
 {
@@ -30,8 +29,6 @@ void Multiworld::init()
 		initConsole();
 		logger_.useStdout(true);
 	}
-	if (config_.use60fps())
-		patch60fps();
 
 	if (config_.enableServer())
 	{
