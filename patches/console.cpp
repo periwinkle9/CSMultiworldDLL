@@ -127,8 +127,8 @@ void ConsoleManager::handleCommand(std::string command)
 		{
 			if (newLogLevel < 0)
 				newLogLevel = 0;
-			else if (newLogLevel > 4)
-				newLogLevel = 4;
+			else if (newLogLevel >= static_cast<int>(csmulti::Logger::LogLevel::Max))
+				newLogLevel = static_cast<int>(csmulti::Logger::LogLevel::Max) - 1;
 			logger().setLogLevel(static_cast<csmulti::Logger::LogLevel>(newLogLevel));
 			std::cout << "Set log level to " << newLogLevel << std::endl;
 		}

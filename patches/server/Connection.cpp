@@ -1,7 +1,7 @@
 #include "Connection.h"
 #include "ConnectionManager.h"
 #include <utility>
-#include <exception>
+#include <stdexcept>
 #include <cstdint>
 #include <sstream>
 #include <format>
@@ -96,7 +96,7 @@ asio::awaitable<void> Connection::handleRequest()
 			if (!response.empty())
 				co_await asio::async_write(socket, asio::buffer(response), asio::use_awaitable);
 		}
-		logger().logDebug("Socket is closed");
+		logger().logTrace("Socket is closed");
 	}
 	catch (std::exception& e)
 	{
@@ -350,10 +350,22 @@ void Connection::prepareResponse()
 		{
 			std::ostringstream oss;
 			oss << "Request data: " << std::hex;
-			for (auto byte : request.data)
+			for (unsigned char byte : request.data)
 				oss << static_cast<int>(byte) << ' ';
 			logger().logInfo(oss.str());
 		}
+	}
+
+	if (response.size() < 5)
+		throw std::logic_error("Malformed response");
+	else
+	{
+		std::ostringstream oss;
+		oss << std::format("Sending response: type = {:d}, size = {}, data = ", response[0], readInteger<std::uint32_t>(response.cbegin() + 1));
+		oss << std::hex;
+		for (auto it = response.cbegin() + 5; it != response.cend(); ++it)
+			oss << static_cast<unsigned>(static_cast<unsigned char>(*it)) << ' ';
+		logger().logDebug(oss.str());
 	}
 }
 } // end namespace csmulti

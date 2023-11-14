@@ -61,8 +61,8 @@ void Config::load(const char* name)
 		maxLogLevel = GetPrivateProfileIntA("debug", "log_level", DefaultLogLevel, pathStr);
 		if (maxLogLevel < 0)
 			maxLogLevel = 0;
-		else if (maxLogLevel > 4)
-			maxLogLevel = 4;
+		else if (maxLogLevel > 5)
+			maxLogLevel = 5;
 		logFile = GetPrivateProfileIntA("debug", "log_to_file", DefaultLogToFile, pathStr);
 		ignoreUUID = GetPrivateProfileIntA("debug", "ignore_uuid_mismatch", DefaultIgnoreUUID, pathStr);
 	}

@@ -11,7 +11,7 @@ namespace csmulti
 class Logger
 {
 public:
-	enum class LogLevel { None, Error, Warning, Info, Debug };
+	enum class LogLevel { None, Error, Warning, Info, Debug, Trace, Max };
 private:
 	std::ofstream logFile;
 	std::mutex mutex;
@@ -28,6 +28,7 @@ public:
 	void logWarning(std::string message) { log(LogLevel::Warning, std::move(message)); }
 	void logInfo(std::string message) { log(LogLevel::Info, std::move(message)); }
 	void logDebug(std::string message) { log(LogLevel::Debug, std::move(message)); }
+	void logTrace(std::string message) { log(LogLevel::Trace, std::move(message)); }
 
 	bool useStdout(bool use) { bool old = isUsingStdout.exchange(use); return old; }
 	void logToFile(bool log);

@@ -46,7 +46,7 @@ void TSCExecutor::runScript(std::string script)
 	currentScript = scriptBuffer;
 	currentPos = std::begin(currentScript);
 	mode = OperationMode::RUNNING;
-	logger().logDebug("Now executing script: " + scriptBuffer);
+	logger().logTrace("Now executing script: " + scriptBuffer);
 }
 
 void TSCExecutor::runEvent(int eventNum)
@@ -202,7 +202,7 @@ void TSCExecutor::jumpEvent(int eventNum)
 		currentScript = std::string_view{eventStart, nextEvent};
 		currentPos = std::begin(currentScript);
 		mode = OperationMode::RUNNING;
-		logger().logDebug(std::format("Now executing event {}", eventNum));
+		logger().logTrace(std::format("Now executing event {}", eventNum));
 	}
 	else
 	{

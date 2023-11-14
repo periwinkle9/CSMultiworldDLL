@@ -32,6 +32,9 @@ void Logger::log(LogLevel level, std::string message)
 	case LogLevel::Debug:
 		tag = "[DEBUG]";
 		break;
+	case LogLevel::Trace:
+		tag = "[TRACE]";
+		break;
 	}
 
 	std::string formatted;

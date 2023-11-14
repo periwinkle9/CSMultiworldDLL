@@ -102,7 +102,7 @@ static void fulfill(RequestQueue::Request& request)
 			oss << "Acquiring lock to fulfill request for flags: ";
 			for (auto flag : req->flags)
 				oss << flag << ' ';
-			logger().logDebug(oss.str());
+			logger().logTrace(oss.str());
 		}
 		{
 			std::scoped_lock<std::mutex> lock{req->mutex};
@@ -113,7 +113,7 @@ static void fulfill(RequestQueue::Request& request)
 			req->fulfilled = true;
 		}
 		req->cv.notify_one();
-		logger().logDebug("Flag request fulfilled, server thread notified");
+		logger().logTrace("Flag request fulfilled, server thread notified");
 		break;
 	}
 	case RT::MEMREAD:
@@ -122,7 +122,7 @@ static void fulfill(RequestQueue::Request& request)
 		if (req == nullptr)
 			throw std::logic_error("Null request data");
 
-		logger().logDebug(std::format("Acquiring lock to fulfill mem request at {:#x}, {} bytes", req->address, req->numBytes));
+		logger().logTrace(std::format("Acquiring lock to fulfill mem request at {:#x}, {} bytes", req->address, req->numBytes));
 		{
 			std::scoped_lock<std::mutex> lock{req->mutex};
 			req->result.resize(req->numBytes);
@@ -133,7 +133,7 @@ static void fulfill(RequestQueue::Request& request)
 			req->fulfilled = true;
 		}
 		req->cv.notify_one();
-		logger().logDebug("Memory read request fulfilled, server notified");
+		logger().logTrace("Memory read request fulfilled, server notified");
 		break;
 	}
 	case RT::MEMWRITE:
@@ -142,7 +142,7 @@ static void fulfill(RequestQueue::Request& request)
 		if (req == nullptr)
 			throw std::logic_error("Null request data");
 
-		logger().logDebug(std::format("Acquiring lock to fulfilling mem request at {:#x}, {} bytes", req->address, req->bytes.size()));
+		logger().logTrace(std::format("Acquiring lock to fulfilling mem request at {:#x}, {} bytes", req->address, req->bytes.size()));
 		{
 			std::scoped_lock<std::mutex> lock{req->mutex};
 			if (WriteProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(req->address), req->bytes.data(), req->bytes.size(), nullptr))
@@ -152,7 +152,7 @@ static void fulfill(RequestQueue::Request& request)
 			req->fulfilled = true;
 		}
 		req->cv.notify_one();
-		logger().logDebug("Memory write request fulfilled, server notified");
+		logger().logTrace("Memory write request fulfilled, server notified");
 		break;
 	}
 	default:
