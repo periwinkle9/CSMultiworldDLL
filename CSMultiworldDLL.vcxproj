@@ -126,6 +126,7 @@
     <ClCompile Include="patch_utils.cpp" />
     <ClCompile Include="patches\tsc\TSCExecutor.cpp" />
     <ClCompile Include="patches\request\RequestQueue.cpp" />
+    <ClCompile Include="patches\request\TSCQueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports_msvc.def" />
@@ -177,6 +178,7 @@
     <ClInclude Include="patch_utils.h" />
     <ClInclude Include="patches\tsc\TSCExecutor.h" />
     <ClInclude Include="patches\request\RequestQueue.h" />
+    <ClInclude Include="patches\request\TSCQueue.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

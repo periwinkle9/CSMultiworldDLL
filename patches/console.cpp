@@ -15,9 +15,8 @@
 #include "server/Server.h"
 #include "doukutsu/flags.h"
 
-using csmulti::RequestQueue;
 using csmulti::logger;
-using csmulti::requestQueue;
+using csmulti::eventQueue;
 using csmulti::tcpServer;
 
 class ConsoleManager
@@ -86,10 +85,7 @@ void ConsoleManager::handleInputs()
 				handleCommand(std::move(command));
 			else
 			{
-				RequestQueue::Request request;
-				request.type = RequestQueue::Request::RequestType::SCRIPT;
-				request.data = std::move(command);
-				requestQueue().push(std::move(request));
+				eventQueue().push(std::move(command));
 				std::cout << "Command sent." << std::endl;
 			}
 		}

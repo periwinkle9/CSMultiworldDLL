@@ -18,16 +18,11 @@ public:
 	};
 private:
 	std::queue<Request> pendingRequests;
-	std::queue<Request> pendingTSC;
 	std::mutex requestMutex;
-	std::mutex tscMutex;
 
 public:
 	RequestQueue() = default;
 	void push(Request request);
-	void pushMultiple(const std::vector<Request>& requests);
-	bool tryPopTSC(Request& poppedValue);
-	void clearTSCQueue();
 	void fulfillAll();
 };
 } // end namespace csmulti

@@ -19,11 +19,7 @@ void RequestQueue::push(Request request)
 	{
 	case RT::SCRIPT:
 	case RT::EVENTNUM:
-	{
-		std::scoped_lock lock{tscMutex};
-		pendingTSC.push(std::move(request));
-		break;
-	}
+		throw std::logic_error("Wrong request queue");
 	case RT::FLAGS:
 	case RT::MEMREAD:
 	case RT::MEMWRITE:
@@ -35,54 +31,6 @@ void RequestQueue::push(Request request)
 	default:
 		throw std::logic_error("Unrecognized request type");
 	}
-}
-
-void RequestQueue::pushMultiple(const std::vector<Request>& requests)
-{
-	std::scoped_lock lock{requestMutex, tscMutex};
-	for (const Request& request : requests)
-	{
-		using RT = Request::RequestType;
-		switch (request.type)
-		{
-		case RT::SCRIPT:
-		case RT::EVENTNUM:
-			pendingTSC.push(request);
-			break;
-		case RT::FLAGS:
-		case RT::MEMREAD:
-		case RT::MEMWRITE:
-			pendingRequests.push(request);
-			break;
-		default:
-			throw std::logic_error("Unrecognized request type");
-		}
-	}
-}
-
-bool RequestQueue::tryPopTSC(Request& poppedRequest)
-{
-	std::unique_lock<std::mutex> lock{tscMutex, std::try_to_lock};
-	if (lock)
-	{
-		if (!pendingTSC.empty())
-		{
-			poppedRequest = std::move(pendingTSC.front());
-			pendingTSC.pop();
-			return true;
-		}
-	}
-	return false;
-}
-
-void RequestQueue::clearTSCQueue()
-{
-	logger().logDebug("Clearing TSC event queue");
-	std::unique_lock<std::mutex> lock{tscMutex};
-	// Heh, std::queue doesn't have a .clear() member function, so let's just swap it out for an empty container
-	using std::swap;
-	decltype(pendingTSC) empty;
-	swap(pendingTSC, empty);
 }
 
 static void fulfill(RequestQueue::Request& request)

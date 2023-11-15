@@ -4,6 +4,7 @@
 #include "Logger.h"
 #include "uuid.h"
 #include "request/RequestQueue.h"
+#include "request/TSCQueue.h"
 #include "tsc/TSCExecutor.h"
 
 namespace csmulti
@@ -18,6 +19,7 @@ private:
 	Logger logger_;
 	UUID uuid_;
 	RequestQueue requestQueue_;
+	TSCQueue tscQueue_;
 	TSCExecutor tscParser_;
 	// Keeping this as a pointer for flexibility (lifetime of server = lifetime of object)
 	class Server* server_;
@@ -44,6 +46,7 @@ public:
 	Logger& logger() { return logger_; }
 	const UUID& uuid() const { return uuid_; }
 	RequestQueue& requestQueue() { return requestQueue_; }
+	TSCQueue& eventQueue() { return tscQueue_; }
 	TSCExecutor& tscParser() { return tscParser_; }
 	Server* tcpServer() { return server_; }
 };
@@ -53,6 +56,7 @@ inline const Config& config() { return Multiworld::getInstance().config(); }
 inline Logger& logger() { return Multiworld::getInstance().logger(); }
 inline const UUID& uuid() { return Multiworld::getInstance().uuid(); }
 inline RequestQueue& requestQueue() { return Multiworld::getInstance().requestQueue(); }
+inline TSCQueue& eventQueue() { return Multiworld::getInstance().eventQueue(); }
 inline TSCExecutor& secondaryTSCParser() { return Multiworld::getInstance().tscParser(); }
 inline Server* tcpServer() { return Multiworld::getInstance().tcpServer(); }
 

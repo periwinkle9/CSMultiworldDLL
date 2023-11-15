@@ -176,12 +176,9 @@ void Connection::prepareResponse()
 	}
 	case EXEC_SCRIPT:
 	{
-		RequestQueue::Request event;
-		event.type = RequestQueue::Request::RequestType::SCRIPT;
-		event.data = std::string(request.data.begin(), request.data.end());
-
-		logger().logInfo("Queueing execution of script: " + std::any_cast<std::string>(event.data));
-		requestQueue().push(std::move(event));
+		std::string script{request.data.begin(), request.data.end()};
+		logger().logInfo("Queueing execution of script: " + script);
+		eventQueue().push(std::move(script));
 
 		response.push_back(EXEC_SCRIPT);
 		response.resize(5);
@@ -229,17 +226,7 @@ void Connection::prepareResponse()
 				oss << event << ' ';
 			logger().logInfo(oss.str());
 		}
-
-		std::vector<RequestQueue::Request> eventRequests;
-		eventRequests.reserve(eventList.size());
-		for (auto eventNum : eventList)
-		{
-			RequestQueue::Request req;
-			req.type = RequestQueue::Request::RequestType::EVENTNUM;
-			req.data = eventNum;
-			eventRequests.push_back(req);
-		}
-		requestQueue().pushMultiple(eventRequests);
+		eventQueue().push(eventList);
 
 		response.push_back(QUEUE_EVENTS);
 		response.resize(5);

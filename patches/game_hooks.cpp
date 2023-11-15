@@ -19,17 +19,17 @@ using namespace csmulti;
 namespace
 {
 
-using Request = RequestQueue::Request;
+using Event = TSCQueue::Event;
 
-void handleRequest(const Request& request)
+void runEvent(const Event& request)
 {
-	switch (request.type)
+	switch (request.index())
 	{
-	case Request::RequestType::SCRIPT:
-		secondaryTSCParser().runScript(std::any_cast<std::string>(request.data));
+	case 0: // std::string
+		secondaryTSCParser().runScript(std::get<0>(request));
 		break;
-	case Request::RequestType::EVENTNUM:
-		secondaryTSCParser().runEvent(std::any_cast<int>(request.data));
+	case 1: // int
+		secondaryTSCParser().runEvent(std::get<1>(request));
 		break;
 	}
 }
@@ -39,9 +39,9 @@ int TextScriptProcWrapper()
 {
 	if (!secondaryTSCParser().isRunning())
 	{
-		Request request;
-		if (requestQueue().tryPopTSC(request))
-			handleRequest(request);
+		Event event;
+		if (eventQueue().tryPop(event))
+			runEvent(event);
 	}
 	secondaryTSCParser().tick();
 	// Run vanilla TSC
@@ -93,7 +93,7 @@ BOOL LoadProfile(const char* name)
 		return FALSE;
 	}
 	// Clear TSC script queue and stop running events on game reset
-	requestQueue().clearTSCQueue();
+	eventQueue().clear();
 	secondaryTSCParser().endEvent();
 	return TRUE;
 }
@@ -101,7 +101,7 @@ BOOL LoadProfile(const char* name)
 BOOL InitializeGame(void* hWnd)
 {
 	// Clear TSC script queue and stop running events  on new game
-	requestQueue().clearTSCQueue();
+	eventQueue().clear();
 	secondaryTSCParser().endEvent();
 	return csvanilla::InitializeGame(hWnd);
 }
