@@ -1,24 +1,16 @@
 #pragma once
 
-#include <string>
-#include <vector>
 #include <queue>
 #include <mutex>
-#include <any>
+#include "RequestTypes.h"
 
 namespace csmulti
 {
 class RequestQueue
 {
-public:
-	struct Request
-	{
-		enum class RequestType { SCRIPT, EVENTNUM, FLAGS, MEMREAD, MEMWRITE } type;
-		std::any data;
-	};
 private:
 	std::queue<Request> pendingRequests;
-	std::mutex requestMutex;
+	std::mutex mutex;
 
 public:
 	RequestQueue() = default;

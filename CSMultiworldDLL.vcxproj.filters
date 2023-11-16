@@ -63,6 +63,9 @@
     <ClCompile Include="patches\request\TSCQueue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="patches\request\RequestTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports_msvc.def">

@@ -105,7 +105,9 @@ asio::awaitable<void> Connection::handleRequest()
 	}
 }
 
-static std::vector<std::int32_t> parseNumberList(const std::vector<char>& data)
+namespace
+{
+std::vector<std::int32_t> parseNumberList(const std::vector<char>& data)
 {
 	if (data.size() % 4 != 0)
 		logger().logWarning(std::format("Received data not a multiple of 4 bytes (size = {}); ignoring the last {} bytes", data.size(), data.size() % 4));
@@ -119,7 +121,7 @@ static std::vector<std::int32_t> parseNumberList(const std::vector<char>& data)
 	return output;
 }
 
-static std::string getServerInfoString()
+std::string getServerInfoString()
 {
 	constexpr int API_Version = 0;
 	// Manually construct JSON string :')
@@ -142,6 +144,18 @@ static std::string getServerInfoString()
 		reinterpret_cast<std::uint32_t>(&csvanilla::gMC.life),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gMC.max_life));
 }
+
+template <typename ReqType>
+bool submitAndWaitForRequest(std::shared_ptr<ReqType>& requestData)
+{
+	Request request{requestData};
+	requestQueue().push(std::move(request));
+
+	using namespace std::chrono_literals;
+	std::unique_lock<std::mutex> lock{requestData->mutex};
+	return requestData->cv.wait_for(lock, 1s, [&requestData]() -> bool { return requestData->fulfilled; });
+}
+} // end anonymous namespace
 
 void Connection::prepareResponse()
 {
@@ -186,7 +200,7 @@ void Connection::prepareResponse()
 	}
 	case GET_FLAGS:
 	{
-		std::shared_ptr<RequestTypes::FlagRequest> flagRequest{new RequestTypes::FlagRequest};
+		std::shared_ptr<RequestTypes::FlagReadRequest> flagRequest{new RequestTypes::FlagReadRequest};
 		flagRequest->flags = parseNumberList(request.data);
 		{
 			std::ostringstream oss;
@@ -200,16 +214,7 @@ void Connection::prepareResponse()
 		response.push_back(GET_FLAGS);
 		writeInteger<std::uint32_t>(response, flagRequest->flags.size());
 
-		// Submit request and wait for it to be fulfilled
-		flagRequest->fulfilled = false;
-		RequestQueue::Request req;
-		req.type = RequestQueue::Request::RequestType::FLAGS;
-		req.data = flagRequest;
-		requestQueue().push(std::move(req));
-
-		using namespace std::chrono_literals;
-		std::unique_lock<std::mutex> lock{flagRequest->mutex};
-		if (flagRequest->cv.wait_for(lock, 1s, [&flagRequest]() -> bool { return flagRequest->fulfilled; }))
+		if (submitAndWaitForRequest(flagRequest))
 			response.insert(response.end(), flagRequest->result.begin(), flagRequest->result.end());
 		else
 			makeError("[2] Request timed out", Logger::LogLevel::Warning);
@@ -245,16 +250,7 @@ void Connection::prepareResponse()
 			response.push_back(request.data[5]);
 			response.resize(5);
 
-			// Submit request and wait for it to be fulfilled
-			memReadReq->fulfilled = false;
-			RequestQueue::Request req;
-			req.type = RequestQueue::Request::RequestType::MEMREAD;
-			req.data = memReadReq;
-			requestQueue().push(std::move(req));
-
-			using namespace std::chrono_literals;
-			std::unique_lock<std::mutex> lock{memReadReq->mutex};
-			if (memReadReq->cv.wait_for(lock, 1s, [&memReadReq]() -> bool { return memReadReq->fulfilled; }))
+			if (submitAndWaitForRequest(memReadReq))
 			{
 				if (memReadReq->errorCode == 0)
 					response.insert(response.end(), memReadReq->result.begin(), memReadReq->result.end());
@@ -277,16 +273,7 @@ void Connection::prepareResponse()
 			memWriteReq->bytes.insert(memWriteReq->bytes.begin(), request.data.begin() + 4, request.data.end());
 			logger().logInfo(std::format("Received request for writing {} bytes of memory starting at address {:#x}", memWriteReq->bytes.size(), memWriteReq->address));
 
-			// Submit request and wait for it to be fulfilled
-			memWriteReq->fulfilled = false;
-			RequestQueue::Request req;
-			req.type = RequestQueue::Request::RequestType::MEMWRITE;
-			req.data = memWriteReq;
-			requestQueue().push(std::move(req));
-
-			using namespace std::chrono_literals;
-			std::unique_lock<std::mutex> lock{memWriteReq->mutex};
-			if (memWriteReq->cv.wait_for(lock, 1s, [&memWriteReq]() -> bool { return memWriteReq->fulfilled; }))
+			if (submitAndWaitForRequest(memWriteReq))
 			{
 				if (memWriteReq->errorCode == 0)
 					response[0] = WRITE_MEMORY;
@@ -315,10 +302,14 @@ void Connection::prepareResponse()
 			break;
 		case 1: // Get current map (internal) name
 		{
-			// Unsynchronized memory access...let's hope it doesn't cause any problems
-			std::string_view mapName{csvanilla::gTMT[csvanilla::gStageNo].map};
-			writeInteger<std::uint32_t>(response, mapName.size());
-			response.insert(response.end(), mapName.begin(), mapName.end());
+			std::shared_ptr<RequestTypes::GetCurrentMapRequest> mapReq{new RequestTypes::GetCurrentMapRequest};
+			if (submitAndWaitForRequest(mapReq))
+			{
+				writeInteger<std::uint32_t>(response, mapReq->mapName.size());
+				response.insert(response.end(), mapReq->mapName.begin(), mapReq->mapName.end());
+			}
+			else
+				makeError("[6] Request timed out", Logger::LogLevel::Warning);
 			break;
 		}
 		default:

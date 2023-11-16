@@ -76,6 +76,7 @@ Type 6 - Query game state
     -1: none of the above (game initializing/de-initializing)
    if request type == 1:
      header (6, m) + m byte string containing the current (internal) map name
+   on any error: header (-1, m) + m byte string describing the error
 
 Type -1 (255) - Disconnect
  Closes the current connection. The server can detect if the client closed the connection

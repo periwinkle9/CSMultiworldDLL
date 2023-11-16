@@ -117,6 +117,7 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="patches\Logger.cpp" />
     <ClCompile Include="patches.cpp" />
+    <ClCompile Include="patches\request\RequestTypes.cpp" />
     <ClCompile Include="patches\server\Connection.cpp" />
     <ClCompile Include="patches\console.cpp" />
     <ClCompile Include="patches\game_hooks.cpp" />
