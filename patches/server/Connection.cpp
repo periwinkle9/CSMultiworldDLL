@@ -321,7 +321,7 @@ void Connection::prepareResponse()
 	case DISCONNECT:
 		logger().logInfo("Received disconnect signal; ending connection");
 		connectionManager.stop(shared_from_this());
-		break;
+		return;
 	default: // Unknown request! Uh-oh
 		makeError(std::format("[{}] Unknown request type", static_cast<int>(request.header[0])), Logger::LogLevel::Warning);
 
@@ -329,18 +329,25 @@ void Connection::prepareResponse()
 			std::ostringstream oss;
 			oss << "Request data: " << std::hex;
 			for (unsigned char byte : request.data)
-				oss << static_cast<int>(byte) << ' ';
+				oss << static_cast<unsigned>(byte) << ' ';
 			logger().logInfo(oss.str());
 		}
 	}
 
+	std::ostringstream oss;
+	oss << std::hex;
 	if (response.size() < 5)
+	{
+		logger().logError("Malformed server response, terminating connection");
+		oss << "Response data: ";
+		for (unsigned char byte : response)
+			oss << static_cast<unsigned>(byte) << ' ';
+		logger().logDebug(oss.str());
 		throw std::logic_error("Malformed response");
+	}
 	else
 	{
-		std::ostringstream oss;
 		oss << std::format("Sending response: type = {:d}, size = {}, data = ", response[0], readInteger<std::uint32_t>(response.cbegin() + 1));
-		oss << std::hex;
 		for (auto it = response.cbegin() + 5; it != response.cend(); ++it)
 			oss << static_cast<unsigned>(static_cast<unsigned char>(*it)) << ' ';
 		logger().logDebug(oss.str());
