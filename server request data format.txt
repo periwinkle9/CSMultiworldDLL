@@ -63,16 +63,15 @@ Type 6 - Query game state
   data: none or 1 byte request type
   server response:
    if request type == 0 or blank:
-     header (6, 1) + 1 byte denoting the current game execution state:
-     0: intro cutscene (ModeOpening())
-     1: title screen (ModeTitle())
-     2: main game loop (ModeAction())
-     3: inventory screen (CampLoop())
-     4: teleporter menu (StageSelectLoop())
-     5: minimap display (MiniMapLoop())
-     6: island falling cutscene (Scene_DownIsland())
-     7: Esc menu (Call_Escape())
-    -1: none of the above (game initializing/de-initializing)
+     header (6, 1) + 1 byte bitfield denoting the current game execution state:
+      0x1: intro cutscene (ModeOpening())
+      0x2: title screen (ModeTitle())
+      0x4: main game loop (ModeAction())
+      0x8: inventory screen (CampLoop())
+     0x10: teleporter menu (StageSelectLoop())
+     0x20: minimap display (MiniMapLoop())
+     0x40: island falling cutscene (Scene_DownIsland())
+     0x80: Esc menu (Call_Escape())
    if request type == 1:
      header (6, m) + m byte string containing the current (internal) map name
    on any error: header (-1, m) + m byte string describing the error

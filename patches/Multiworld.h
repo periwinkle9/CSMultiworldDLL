@@ -9,12 +9,27 @@
 
 namespace csmulti
 {
+// Hack to have a scoped enum with implicit conversion
+namespace GameMode
+{
+enum Mode : unsigned char {
+	INIT = 0,
+	OPENING = 1,
+	TITLE = 2,
+	ACTION = 4,
+	INVENTORY = 8,
+	TELEPORTER = 0x10,
+	MINIMAP = 0x20,
+	ISLAND_FALLING = 0x40,
+	ESCAPE = 0x80
+};
+} // end namespace GameMode
 class Multiworld
 {
 public:
-	enum class GameMode { INIT = -1, OPENING, TITLE, ACTION, INVENTORY, TELEPORTER, MINIMAP, ISLAND_FALLING, ESCAPE };
+	using GameMode = GameMode::Mode;
 private:
-	std::atomic<GameMode> gameMode_;
+	std::atomic_uchar gameMode_;
 	Config config_;
 	Logger logger_;
 	UUID uuid_;
@@ -42,8 +57,9 @@ public:
 
 	void clearRequestsAndTSC();
 
-	GameMode currentGameMode() const { return gameMode_.load(); }
-	GameMode setGameMode(GameMode newMode) { return gameMode_.exchange(newMode); }
+	GameMode currentGameMode() const { return GameMode{gameMode_.load()}; }
+	void enterGameMode(GameMode mode) { gameMode_ |= mode; }
+	void exitGameMode(GameMode mode) { gameMode_ &= ~mode; }
 	const Config& config() const { return config_; }
 	Logger& logger() { return logger_; }
 	const UUID& uuid() const { return uuid_; }

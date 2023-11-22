@@ -158,40 +158,23 @@ void patch60fps()
 
 #define MAKE_FUNC(name, args, mode, ...) int name args \
 { \
-	GameMode prevGameMode = Multiworld::getInstance().setGameMode(mode); \
+	Multiworld::getInstance().enterGameMode(mode); \
 	int ret = csvanilla:: name (__VA_ARGS__); \
-	Multiworld::getInstance().setGameMode(prevGameMode); \
+	Multiworld::getInstance().exitGameMode(mode); \
 	return ret; \
-}
-
-// Workaround for wrapping ModeTitle() and ModeAction() which contain ASM hacks that clobber ESI,
-// which also causes issues with using the approach in MAKE_FUNC above
-#define MAKE_GAME_FUNC(name, mode) int name(void* hWnd) \
-{ \
-	Multiworld::getInstance().setGameMode(mode); \
-	return csvanilla::name(hWnd); \
 }
 
 namespace
 {
-using GameMode = Multiworld::GameMode;
-
 MAKE_FUNC(ModeOpening, (void* hWnd), GameMode::OPENING, hWnd)
 
 // MSVC's runtime stack frame checks work by saving ESP to ESI before a function call and then checking that ESP was restored correctly after the call.
 // These functions contain hacks that use ESI without preserving its value. This will spuriously trigger the runtime stack frame check since ESI will
 // no longer be equal to ESP, but in reality there is no stack frame error so this check can safely be disabled for these functions.
 #pragma runtime_checks("s", off)
-MAKE_GAME_FUNC(ModeTitle, GameMode::TITLE)
-MAKE_GAME_FUNC(ModeAction, GameMode::ACTION)
+MAKE_FUNC(ModeTitle, (void* hWnd), GameMode::TITLE, hWnd)
+MAKE_FUNC(ModeAction, (void* hWnd), GameMode::ACTION, hWnd)
 #pragma runtime_checks("s", restore)
-
-// Replaces the EndMapData() call when exiting (sets currentGameMode correctly, since the MAKE_GAME_FUNC workaround doesn't do this)
-void DeinitHook()
-{
-	Multiworld::getInstance().setGameMode(GameMode::INIT);
-	return csvanilla::EndMapData();
-}
 
 MAKE_FUNC(CampLoop, (), GameMode::INVENTORY)
 MAKE_FUNC(StageSelectLoop, (int* event), GameMode::TELEPORTER, event)
@@ -206,7 +189,6 @@ void hookGameLoops()
 	writeCall(0x40F6A7, ModeOpening);
 	writeCall(0x40F6BC, ModeTitle);
 	writeCall(0x40F6D1, ModeAction);
-	writeCall(0x40F6EA, DeinitHook);
 	writeCall(0x410725, CampLoop);
 	writeCall(0x4244CE, StageSelectLoop);
 	writeCall(0x410785, MiniMapLoop);
