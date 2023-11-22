@@ -13,7 +13,7 @@ void FlagReadRequest::fulfill()
 {
 	{
 		std::ostringstream oss;
-		oss << "Acquiring lock to fulfill request for flags: ";
+		oss << "Acquiring lock to fulfill read request for flags: ";
 		for (auto flag : flags)
 			oss << flag << ' ';
 		logger().logTrace(oss.str());
@@ -27,7 +27,38 @@ void FlagReadRequest::fulfill()
 		fulfilled = true;
 	}
 	cv.notify_one();
-	logger().logTrace("Flag request fulfilled, server thread notified");
+	logger().logTrace("Flag read request fulfilled, server thread notified");
+}
+
+void FlagWriteRequest::fulfill()
+{
+	{
+		std::ostringstream oss;
+		oss << "Acquiring lock to fulfill write request for flags: ";
+		for (auto flag : flags)
+		{
+			if (flag < 0)
+				oss << '-' << -flag << ' ';
+			else
+				oss << '+' << flag << ' ';
+		}
+		logger().logTrace(oss.str());
+	}
+	{
+		std::scoped_lock lock{mutex};
+		auto setFlag = [](std::int32_t flagNum)
+		{
+			if (flagNum < 0)
+				csvanilla::gFlagNPC[(-flagNum) / 8] &= ~(1 << ((-flagNum) % 8));
+			else
+				csvanilla::gFlagNPC[flagNum / 8] |= (1 << (flagNum % 8));
+		};
+		for (auto flag : flags)
+			setFlag(flag);
+		fulfilled = true;
+	}
+	cv.notify_one();
+	logger().logTrace("Flag set request fulfilled, server thread notified");
 }
 
 void MemoryReadRequest::fulfill()

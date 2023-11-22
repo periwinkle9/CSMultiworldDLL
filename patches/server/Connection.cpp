@@ -121,7 +121,7 @@ std::vector<std::int32_t> parseNumberList(const std::vector<char>& data)
 
 std::string getServerInfoString()
 {
-	constexpr int API_Version = 0;
+	constexpr int API_Version = 1;
 	// Manually construct JSON string :')
 	constexpr std::string_view outputFormat = R"!!({{
 	"api_version": {},
@@ -161,7 +161,7 @@ RequestFulfillStatus submitAndWaitForRequest(std::shared_ptr<ReqType>& requestDa
 
 void Connection::prepareResponse()
 {
-	enum RequestType : unsigned char { HANDSHAKE, EXEC_SCRIPT, GET_FLAGS, QUEUE_EVENTS, READ_MEMORY, WRITE_MEMORY, QUERY_GAME_STATE, DISCONNECT = 255 };
+	enum RequestType : unsigned char { HANDSHAKE, EXEC_SCRIPT, GET_FLAGS, SET_FLAGS, READ_MEMORY, WRITE_MEMORY, QUERY_GAME_STATE, DISCONNECT = 255 };
 
 	{
 		logger().logInfo(std::format("Received request: type = {:d}, size = {}", request.header[0], request.data.size()));
@@ -230,21 +230,36 @@ void Connection::prepareResponse()
 		}
 		break;
 	}
-	case QUEUE_EVENTS:
+	case SET_FLAGS:
 	{
-		std::vector<std::int32_t> eventList = parseNumberList(request.data);
+		std::shared_ptr<RequestTypes::FlagWriteRequest> flagRequest{new RequestTypes::FlagWriteRequest};
+		flagRequest->flags = parseNumberList(request.data);
 		{
 			std::ostringstream oss;
-			oss << "Queueing execution of events: ";
-			for (std::int32_t event : eventList)
-				oss << event << ' ';
+			oss << "Received write request for flags: ";
+			for (std::int32_t flag : flagRequest->flags)
+			{
+				if (flag < 0)
+					oss << '-' << -flag << ' ';
+				else
+					oss << '+' << flag << ' ';
+			}
 			logger().logInfo(oss.str());
 		}
-		eventQueue().push(eventList);
 
-		response.push_back(QUEUE_EVENTS);
-		response.resize(5);
-
+		switch (submitAndWaitForRequest(flagRequest))
+		{
+		case RequestFulfillStatus::Success:
+			response.push_back(SET_FLAGS);
+			response.resize(5);
+			break;
+		case RequestFulfillStatus::Canceled:
+			makeError("[3] Request canceled by server", Logger::LogLevel::Info);
+			break;
+		case RequestFulfillStatus::TimedOut:
+			makeError("[3] Request timed out", Logger::LogLevel::Warning);
+			break;
+		}
 		break;
 	}
 	case READ_MEMORY:

@@ -34,6 +34,14 @@ struct FlagReadRequest: SynchronizedRequest
 	void fulfill() override;
 };
 
+struct FlagWriteRequest : SynchronizedRequest
+{
+	// Input
+	std::vector<std::int32_t> flags;
+
+	void fulfill() override;
+};
+
 struct MemoryReadRequest: SynchronizedRequest
 {
 	// Input

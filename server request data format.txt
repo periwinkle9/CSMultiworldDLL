@@ -38,10 +38,9 @@ Type 2 - Get flag state
                 state of the requested flags
     on failure, header (-1, m) + m byte string describing the error
 
-Type 3 - Queue multiple event numbers
-  data: array of n/4 signed 4-byte event numbers, little-endian
-        (the events will be ran sequentially within the current map's script,
-        so you'd best only specify events from Head.tsc!)
+Type 3 - Set flags
+  data: array of n/4 signed 4-byte values. Positive values denote flags to set, and
+        negative (2s complement) values denote flags to unset.
   server response:
     on success, header (3, 0) + no data
     on failure, header (-1, m) + m byte string describing the error
