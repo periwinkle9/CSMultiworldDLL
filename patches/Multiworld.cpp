@@ -1,7 +1,5 @@
 #include "Multiworld.h"
-#include "request/RequestQueue.h"
 #include "server/Server.h"
-#include "tsc/TSCExecutor.h"
 #include "console.h"
 
 static bool isSoloModeUUID(const IID& uuid)
@@ -42,6 +40,7 @@ void Multiworld::init()
 }
 void Multiworld::deinit()
 {
+	requestQueue_.cancelAll();
 	if (server_ != nullptr)
 	{
 		server_->stop();
@@ -49,5 +48,12 @@ void Multiworld::deinit()
 		server_ = nullptr;
 	}
 	exitConsole();
+}
+
+void Multiworld::clearRequestsAndTSC()
+{
+	requestQueue_.cancelAll();
+	tscQueue_.clear();
+	tscParser_.endEvent();
 }
 } // end namespace csmulti

@@ -16,10 +16,12 @@ struct SynchronizedRequest
 	std::mutex mutex;
 	std::condition_variable cv;
 	std::atomic_bool fulfilled;
+	bool canceled;
 
-	SynchronizedRequest() = default;
+	SynchronizedRequest() : mutex{}, cv{}, fulfilled{false}, canceled{false} {}
 	virtual ~SynchronizedRequest() = default;
 	virtual void fulfill() = 0;
+	void cancel() { canceled = true; fulfilled = true; cv.notify_one(); }
 };
 
 struct FlagReadRequest: SynchronizedRequest
@@ -81,5 +83,6 @@ public:
 	Request& operator=(Request&&) = default;
 
 	void fulfill() { requestData->fulfill(); }
+	void cancel() { requestData->cancel(); }
 };
 } // end namespace csmulti

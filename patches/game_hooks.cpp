@@ -4,8 +4,6 @@
 #include <stdexcept>
 #include "patch_utils.h"
 #include "Multiworld.h"
-#include "tsc/TSCExecutor.h"
-#include "request/RequestQueue.h"
 #include "doukutsu/inventory.h"
 #include "doukutsu/map.h"
 #include "doukutsu/misc.h"
@@ -92,17 +90,15 @@ BOOL LoadProfile(const char* name)
 			"A new game will be started instead.", "UUID Mismatch", MB_ICONEXCLAMATION | MB_OK);
 		return FALSE;
 	}
-	// Clear TSC script queue and stop running events on game reset
-	eventQueue().clear();
-	secondaryTSCParser().endEvent();
+	// Clear request queues and stop running events on game reset
+	Multiworld::getInstance().clearRequestsAndTSC();
 	return TRUE;
 }
 
 BOOL InitializeGame(void* hWnd)
 {
-	// Clear TSC script queue and stop running events  on new game
-	eventQueue().clear();
-	secondaryTSCParser().endEvent();
+	// Clear request queues and stop running events on new game
+	Multiworld::getInstance().clearRequestsAndTSC();
 	return csvanilla::InitializeGame(hWnd);
 }
 

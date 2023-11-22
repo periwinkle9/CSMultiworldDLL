@@ -31,11 +31,14 @@ bool TSCQueue::tryPop(Event& poppedValue)
 
 void TSCQueue::clear()
 {
-	logger().logDebug("Clearing TSC event queue");
 	std::scoped_lock lock{mutex};
-	// Heh, std::queue doesn't have a .clear() member function, so let's just swap it out for an empty container
-	using std::swap;
-	decltype(eventQueue) empty;
-	swap(eventQueue, empty);
+	if (!eventQueue.empty())
+	{
+		logger().logInfo("Clearing TSC event queue");
+		// Heh, std::queue doesn't have a .clear() member function, so let's just swap it out for an empty container
+		using std::swap;
+		decltype(eventQueue) empty;
+		swap(eventQueue, empty);
+	}
 }
 }

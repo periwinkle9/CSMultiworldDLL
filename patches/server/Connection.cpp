@@ -14,8 +14,6 @@
 #include <asio/read.hpp>
 #include <asio/use_awaitable.hpp>
 #include <asio/write.hpp>
-#include "../request/RequestQueue.h"
-#include "../request/RequestTypes.h"
 #include "../Multiworld.h"
 #include "doukutsu/flags.h"
 #include "doukutsu/inventory.h"
@@ -145,15 +143,19 @@ std::string getServerInfoString()
 		reinterpret_cast<std::uint32_t>(&csvanilla::gMC.max_life));
 }
 
+enum class RequestFulfillStatus { Success, Canceled, TimedOut };
 template <typename ReqType>
-bool submitAndWaitForRequest(std::shared_ptr<ReqType>& requestData)
+RequestFulfillStatus submitAndWaitForRequest(std::shared_ptr<ReqType>& requestData)
 {
 	Request request{requestData};
 	requestQueue().push(std::move(request));
 
 	using namespace std::chrono_literals;
 	std::unique_lock<std::mutex> lock{requestData->mutex};
-	return requestData->cv.wait_for(lock, 1s, [&requestData]() -> bool { return requestData->fulfilled; });
+	if (requestData->cv.wait_for(lock, 1s, [&requestData]() -> bool { return requestData->fulfilled; }))
+		return requestData->canceled ? RequestFulfillStatus::Canceled : RequestFulfillStatus::Success;
+	else
+		return RequestFulfillStatus::TimedOut;
 }
 } // end anonymous namespace
 
@@ -214,11 +216,18 @@ void Connection::prepareResponse()
 		response.push_back(GET_FLAGS);
 		writeInteger<std::uint32_t>(response, flagRequest->flags.size());
 
-		if (submitAndWaitForRequest(flagRequest))
+		switch (submitAndWaitForRequest(flagRequest))
+		{
+		case RequestFulfillStatus::Success:
 			response.insert(response.end(), flagRequest->result.begin(), flagRequest->result.end());
-		else
+			break;
+		case RequestFulfillStatus::Canceled:
+			makeError("[2] Request canceled by server", Logger::LogLevel::Info);
+			break;
+		case RequestFulfillStatus::TimedOut:
 			makeError("[2] Request timed out", Logger::LogLevel::Warning);
-
+			break;
+		}
 		break;
 	}
 	case QUEUE_EVENTS:
@@ -250,16 +259,22 @@ void Connection::prepareResponse()
 			response.push_back(request.data[5]);
 			response.resize(5);
 
-			if (submitAndWaitForRequest(memReadReq))
+			switch (submitAndWaitForRequest(memReadReq))
 			{
+			case RequestFulfillStatus::Success:
 				if (memReadReq->errorCode == 0)
 					response.insert(response.end(), memReadReq->result.begin(), memReadReq->result.end());
 				else
 					makeError(std::format("[4] ReadProcessMemory (addr = {:#x}, size = {}) failed: error code {}",
 						memReadReq->address, memReadReq->numBytes, memReadReq->errorCode), Logger::LogLevel::Warning);
-			}
-			else
+				break;
+			case RequestFulfillStatus::Canceled:
+				makeError("[4] Request canceled by server", Logger::LogLevel::Info);
+				break;
+			case RequestFulfillStatus::TimedOut:
 				makeError("[4] Request timed out", Logger::LogLevel::Warning);
+				break;
+			}
 		}
 		else
 			makeError(std::format("[4] Unexpected request size (expected 6, received {} bytes)", request.data.size()), Logger::LogLevel::Warning);
@@ -273,16 +288,22 @@ void Connection::prepareResponse()
 			memWriteReq->bytes.insert(memWriteReq->bytes.begin(), request.data.begin() + 4, request.data.end());
 			logger().logInfo(std::format("Received request for writing {} bytes of memory starting at address {:#x}", memWriteReq->bytes.size(), memWriteReq->address));
 
-			if (submitAndWaitForRequest(memWriteReq))
+			switch (submitAndWaitForRequest(memWriteReq))
 			{
+			case RequestFulfillStatus::Success:
 				if (memWriteReq->errorCode == 0)
 					response[0] = WRITE_MEMORY;
 				else
 					makeError(std::format("[5] WriteProcessMemory (addr = {:#x}, size = {}) failed: error code {}",
 						memWriteReq->address, memWriteReq->bytes.size(), memWriteReq->errorCode), Logger::LogLevel::Warning);
-			}
-			else
+				break;
+			case RequestFulfillStatus::Canceled:
+				makeError("[5] Request canceled by server", Logger::LogLevel::Info);
+				break;
+			case RequestFulfillStatus::TimedOut:
 				makeError("[5] Request timed out", Logger::LogLevel::Warning);
+				break;
+			}
 		}
 		else if (request.data.size() == 4)
 			makeError("[5] Requested to write 0 bytes of memory", Logger::LogLevel::Warning);
@@ -303,13 +324,19 @@ void Connection::prepareResponse()
 		case 1: // Get current map (internal) name
 		{
 			std::shared_ptr<RequestTypes::GetCurrentMapRequest> mapReq{new RequestTypes::GetCurrentMapRequest};
-			if (submitAndWaitForRequest(mapReq))
+			switch (submitAndWaitForRequest(mapReq))
 			{
+			case RequestFulfillStatus::Success:
 				writeInteger<std::uint32_t>(response, mapReq->mapName.size());
 				response.insert(response.end(), mapReq->mapName.begin(), mapReq->mapName.end());
-			}
-			else
+				break;
+			case RequestFulfillStatus::Canceled:
+				makeError("[6] Request canceled by server", Logger::LogLevel::Info);
+				break;
+			case RequestFulfillStatus::TimedOut:
 				makeError("[6] Request timed out", Logger::LogLevel::Warning);
+				break;
+			}
 			break;
 		}
 		default:

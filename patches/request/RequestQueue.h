@@ -16,5 +16,6 @@ public:
 	RequestQueue() = default;
 	void push(Request request);
 	void fulfillAll();
+	void cancelAll();
 };
 } // end namespace csmulti

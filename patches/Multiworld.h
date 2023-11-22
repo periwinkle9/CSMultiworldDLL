@@ -40,6 +40,8 @@ public:
 	static Multiworld& getInstance() { static Multiworld* runOnce = (instance = new Multiworld); return *instance; }
 	static void end() { delete instance; instance = nullptr; }
 
+	void clearRequestsAndTSC();
+
 	GameMode currentGameMode() const { return gameMode_.load(); }
 	GameMode setGameMode(GameMode newMode) { return gameMode_.exchange(newMode); }
 	const Config& config() const { return config_; }
