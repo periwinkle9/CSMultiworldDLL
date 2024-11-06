@@ -16,6 +16,7 @@
 #include "doukutsu/profile.h"
 #include "doukutsu/sound.h"
 #include "doukutsu/teleporter.h"
+#include "doukutsu/tsc.h"
 
 namespace
 {
@@ -537,6 +538,17 @@ auto TSCExecutor::processCommand() -> CommandStatus
 		break;
 	case TSCcmd<'E','S','C'>::value:
 		// Treat this as <END
+		mode = OperationMode::IDLE;
+		keepProcessing = false;
+		break;
+	// New commands exclusive to this TSC parser
+	case TSCcmd<'D','I','E'>::value:
+		// Kill the player (copy/pasted from death code in DamageMyChar())
+		csvanilla::PlaySoundObject(17, 1);
+		csvanilla::gMC.cond = 0;
+		csvanilla::SetDestroyNpChar(csvanilla::gMC.x, csvanilla::gMC.y, 10 * 0x200, 64);
+		csvanilla::StartTextScript(40); // Run death event in the main parser
+		// End the script (is this necessary?)
 		mode = OperationMode::IDLE;
 		keepProcessing = false;
 		break;
