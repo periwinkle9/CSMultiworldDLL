@@ -129,6 +129,7 @@ std::string getServerInfoString()
 	"uuid": "{}",
 	"offsets": {{
 		"flags": {},
+		"skip_flags": {},
 		"map_flags": {},
 		"arms_data": {},
 		"current_hp": {},
@@ -137,6 +138,7 @@ std::string getServerInfoString()
 }})!!";
 	return std::format(outputFormat, API_Version, "freeware", uuid().string(),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gFlagNPC),
+		reinterpret_cast<std::uint32_t>(&csvanilla::gSkipFlag),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gMapping),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gArmsData),
 		reinterpret_cast<std::uint32_t>(&csvanilla::gMC.life),
