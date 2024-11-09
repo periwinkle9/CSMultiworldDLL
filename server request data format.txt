@@ -12,11 +12,12 @@ Type 0 - Get server info
   data: none (ignored)
   server response: header (0, n) + n-byte JSON string describing the current game:
     {
-    	"api_version": 0,
+    	"api_version": 1,
     	"platform": "freeware",
     	"uuid": "{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}",
     	"offsets": {
     		"flags": 4840864,
+    		"skip_flags": 4840856,
     		"map_flags": 4842936,
     		"arms_data": 4824008,
     		"current_hp": 4843212,
