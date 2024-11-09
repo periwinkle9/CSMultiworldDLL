@@ -56,4 +56,12 @@ void Multiworld::clearRequestsAndTSC()
 	tscQueue_.clear();
 	tscParser_.endEvent();
 }
+
+auto Multiworld::currentGameMode() const -> GameMode
+{
+	unsigned char mode{gameMode_.load()};
+	if (tscParser_.isRunning() || !tscQueue_.empty())
+		mode |= GameMode::PARALLEL_TSC_EXECUTING;
+	return static_cast<GameMode>(mode);
+}
 } // end namespace csmulti

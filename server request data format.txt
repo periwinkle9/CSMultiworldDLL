@@ -60,18 +60,12 @@ Type 5 - Write memory
     on failure, header (-1, m) + m byte string describing the error
 
 Type 6 - Query game state
-  data: none or 1 byte request type
+  data: 1 byte request type
   server response:
-   if request type == 0 or blank:
-     header (6, 1) + 1 byte bitfield denoting the current game execution state:
-      0x1: intro cutscene (ModeOpening())
-      0x2: title screen (ModeTitle())
-      0x4: main game loop (ModeAction())
-      0x8: inventory screen (CampLoop())
-     0x10: teleporter menu (StageSelectLoop())
-     0x20: minimap display (MiniMapLoop())
-     0x40: island falling cutscene (Scene_DownIsland())
-     0x80: Esc menu (Call_Escape())
+   if request type == 0:
+     header (6, 1) + 1 byte bitfield describing the parallel TSC parser state:
+      0x1: is currently executing a script and/or has scripts queued for execution
+      0x2: is able to accept new scripts; i.e., is in game (ModeAction())
    if request type == 1:
      header (6, m) + m byte string containing the current (internal) map name
    on any error: header (-1, m) + m byte string describing the error

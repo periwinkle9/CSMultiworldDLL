@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <array>
+#include <atomic>
 
 class TSCExecutor
 {
@@ -10,7 +11,8 @@ class TSCExecutor
 	std::string scriptBuffer; // Custom script that can be executed
 	std::string_view currentScript; // Currently-executing script (can be either custom or vanilla script)
 	std::string_view::const_iterator currentPos; // Current script read position
-	enum class OperationMode { IDLE, RUNNING, WAITING, WAITUNTILSTANDING, FADE } mode;
+	enum class OperationMode { IDLE, RUNNING, WAITING, WAITUNTILSTANDING, FADE };
+	std::atomic<OperationMode> mode;
 	int wait;
 	int item; // <GIT graphic
 	int NUMnum; // Number storage for <NUM command

@@ -13,15 +13,9 @@ namespace csmulti
 namespace GameMode
 {
 enum Mode : unsigned char {
-	INIT = 0,
-	OPENING = 1,
-	TITLE = 2,
-	ACTION = 4,
-	INVENTORY = 8,
-	TELEPORTER = 0x10,
-	MINIMAP = 0x20,
-	ISLAND_FALLING = 0x40,
-	ESCAPE = 0x80
+	NONE = 0,
+	PARALLEL_TSC_EXECUTING = 1,
+	IN_GAME = 2
 };
 } // end namespace GameMode
 class Multiworld
@@ -43,7 +37,7 @@ private:
 	static Multiworld* instance;
 	void init();
 	void deinit();
-	Multiworld() : gameMode_{GameMode::INIT}, config_{}, logger_{}, uuid_{}, requestQueue_{}, tscParser_{}, server_{} { init(); }
+	Multiworld() : gameMode_{GameMode::NONE}, config_{}, logger_{}, uuid_{}, requestQueue_{}, tscParser_{}, server_{} { init(); }
 public:
 	Multiworld(const Multiworld&) = delete;
 	Multiworld(Multiworld&&) = delete;
@@ -57,7 +51,8 @@ public:
 
 	void clearRequestsAndTSC();
 
-	GameMode currentGameMode() const { return GameMode{gameMode_.load()}; }
+	GameMode currentGameMode() const;
+	void setGameMode(GameMode mode) { gameMode_ = mode; }
 	void enterGameMode(GameMode mode) { gameMode_ |= mode; }
 	void exitGameMode(GameMode mode) { gameMode_ &= ~mode; }
 	const Config& config() const { return config_; }

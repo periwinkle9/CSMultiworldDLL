@@ -4,11 +4,9 @@
 #include <stdexcept>
 #include "patch_utils.h"
 #include "Multiworld.h"
-#include "doukutsu/inventory.h"
 #include "doukutsu/map.h"
 #include "doukutsu/misc.h"
 #include "doukutsu/profile.h"
-#include "doukutsu/teleporter.h"
 #include "doukutsu/tsc.h"
 #include "doukutsu/window.h"
 
@@ -156,46 +154,32 @@ void patch60fps()
 	patcher::patchBytes(0x41A57B, timerPatch + 3, 1);
 }
 
-#define MAKE_FUNC(name, args, mode, ...) int name args \
-{ \
-	Multiworld::getInstance().enterGameMode(mode); \
-	int ret = csvanilla:: name (__VA_ARGS__); \
-	Multiworld::getInstance().exitGameMode(mode); \
-	return ret; \
-}
-
 namespace
 {
-MAKE_FUNC(ModeOpening, (void* hWnd), GameMode::OPENING, hWnd)
+int ModeOpening(void* hWnd)
+{
+	Multiworld::getInstance().setGameMode(GameMode::NONE);
+	return csvanilla::ModeOpening(hWnd);
+}
 
 // MSVC's runtime stack frame checks work by saving ESP to ESI before a function call and then checking that ESP was restored correctly after the call.
-// These functions contain hacks that use ESI without preserving its value. This will spuriously trigger the runtime stack frame check since ESI will
-// no longer be equal to ESP, but in reality there is no stack frame error so this check can safely be disabled for these functions.
+// ModeTitle() and ModeAction() call functions that contain hacks that use ESI without preserving its value.
+// This will spuriously trigger the runtime stack frame check since ESI will no longer be equal to ESP,
+// but in reality there is no stack frame error so this check can safely be disabled for these functions.
 #pragma runtime_checks("s", off)
-MAKE_FUNC(ModeTitle, (void* hWnd), GameMode::TITLE, hWnd)
-MAKE_FUNC(ModeAction, (void* hWnd), GameMode::ACTION, hWnd)
+int ModeAction(void* hWnd)
+{
+	Multiworld::getInstance().setGameMode(GameMode::IN_GAME);
+	return csvanilla::ModeAction(hWnd);
+}
 #pragma runtime_checks("s", restore)
 
-MAKE_FUNC(CampLoop, (), GameMode::INVENTORY)
-MAKE_FUNC(StageSelectLoop, (int* event), GameMode::TELEPORTER, event)
-MAKE_FUNC(MiniMapLoop, (), GameMode::MINIMAP)
-MAKE_FUNC(Scene_DownIsland, (void* hWnd, int mode), GameMode::ISLAND_FALLING, hWnd, mode)
-MAKE_FUNC(Call_Escape, (void* hWnd), GameMode::ESCAPE, hWnd)
+// No need to hook ModeTitle() since the game never enters ModeTitle() directly after ModeAction()
 }
 
 void hookGameLoops()
 {
 	using patcher::writeCall;
 	writeCall(0x40F6A7, ModeOpening);
-	writeCall(0x40F6BC, ModeTitle);
 	writeCall(0x40F6D1, ModeAction);
-	writeCall(0x410725, CampLoop);
-	writeCall(0x4244CE, StageSelectLoop);
-	writeCall(0x410785, MiniMapLoop);
-	writeCall(0x42444C, MiniMapLoop);
-	writeCall(0x4251B5, Scene_DownIsland);
-
-	const patcher::dword EscapeAddrs[] = {0x401DF2, 0x40DC2A, 0x40F7CD, 0x40FF6A, 0x4104E8, 0x4146D8, 0x41488B, 0x4149F0, 0x41DAA0};
-	for (patcher::dword addr : EscapeAddrs)
-		writeCall(addr, Call_Escape);
 }

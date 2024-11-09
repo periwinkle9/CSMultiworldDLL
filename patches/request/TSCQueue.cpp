@@ -29,6 +29,12 @@ bool TSCQueue::tryPop(Event& poppedValue)
 	return false;
 }
 
+bool TSCQueue::empty() const
+{
+	std::scoped_lock lock{mutex};
+	return eventQueue.empty();
+}
+
 void TSCQueue::clear()
 {
 	std::scoped_lock lock{mutex};
