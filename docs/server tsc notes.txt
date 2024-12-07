@@ -1,0 +1,31 @@
+Special TSC commands exclusive to the parallel TSC processor:
+* <DIE - kills the player (interrupts any event running in the main parser)
+  This will run event 40 in the main parser.
+
+These TSC commands have special/different behavior from vanilla:
+* <FLJ - flag 7998 is always treated as being set (this can be used to check whether
+  the executor of this event is the main or parallel processor).
+  Note that <FL+7998 and <FL-7998 behave as normal and will set or unset (respectively)
+  those flags in the profile.
+* <ESC - same as <END (does not reset the game)
+* <MS2, <MS3 - same as normal <MSG
+* <NOD - waits for 100 ticks instead of user input
+* <NUM - argument is ignored (but still required); if used in a message box at any point
+  after an <AM+ in the same event, prints the value of the second argument from that last
+  invocation of <AM+; otherwise prints 0.
+* <YNJ - does not prompt for user input; instead automatically answers no after 50 ticks
+
+Vanilla TSC commands not supported (ignored) by the parallel processor:
+<CIL, <CRE, <FAC, <INI, <LDP, <MLP, <SIL, <SLP, <XX1
+
+These commands are additionally ignored by the server due to their behavior being
+irrelevant and/or the default behavior of the parallel processor:
+* <KEY, <PRI (does not lock player controls or freeze the game)
+* <FRE
+* <TUR, <SAT, <CAT (default behavior)
+
+Any unrecognized TSC command is treated as plain text and will be printed as such if a
+message box is active.
+
+Message box text can be up to 3 lines long and contain up to 43 characters per line.
+Text exceeding these limits will be cut off; no line wrapping is performed.
